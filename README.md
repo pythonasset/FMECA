@@ -14,14 +14,12 @@ This application implements the complete RCM methodology based on the Murrumbidg
 ## Features
 
 ### Core RCM Methodology
-
 - **7 RCM Questions Framework**: Structured approach answering the fundamental questions of RCM
 - **FMECA Analysis**: Complete failure modes, effects, and criticality analysis
 - **Consequence Categorization**: 6-category system (Hidden/Evident × Safety/Operational/Non-operational)
 - **Task Selection**: Intelligent selection of maintenance strategies (CBM, FTM, FF, Redesign, OTF)
 
 ### Key Capabilities
-
 - ✅ Asset and component definition with hierarchical structure
 - ✅ Operating context documentation
 - ✅ Function identification with performance standards
@@ -38,32 +36,28 @@ This application implements the complete RCM methodology based on the Murrumbidg
 ## Installation
 
 ### Prerequisites
-
 - Python 3.8 or higher
 - pip package manager
 
 ### Setup
 
 1. Clone or download this repository:
-
 ```bash
 git clone <repository-url>
 cd rcm-fmeca-tool
 ```
 
-2.Install required packages:
-
+2. Install required packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-3.Run the application:
-
+3. Run the application:
 ```bash
 streamlit run rcm_fmeca_app.py
 ```
 
-4.Open your web browser to the URL shown (typically <http://localhost:8501>)
+4. Open your web browser to the URL shown (typically http://localhost:8501)
 
 ## Usage Guide
 
@@ -85,34 +79,26 @@ streamlit run rcm_fmeca_app.py
 ### Stage 2: RCM Analysis (FMECA)
 
 #### Step 2: Identify Functions
-
 Define what the asset is supposed to do:
-
 - Use format: [Verb] + [Object] + [Performance Standard]
 - Example: "To pump water from reservoir at 250 L/s at 1,147 kPa"
 - Include primary and secondary functions
 - Specify quantifiable performance standards where possible
 
 #### Step 3: Identify Functional Failures
-
 How can the asset fail to meet its functions?
-
 - Complete loss: "Unable to pump any water"
 - Partial loss: "Pumps water at less than 250 L/s"
 - Exceeds limits: "Pressure exceeds 1,200 kPa"
 
 #### Step 4: Identify Failure Modes
-
 What specifically causes each functional failure?
-
 - Identify at component level
 - Include cause: "Pump bearing seized due to lack of lubrication"
 - Categories: Deterioration, lubrication, contamination, disassembly, human error, overloading
 
 #### Step 5: Identify Failure Effects
-
 What happens when each failure occurs?
-
 - Evidence of failure
 - Safety and environmental impacts
 - Operational impacts
@@ -120,9 +106,7 @@ What happens when each failure occurs?
 - Repair requirements and downtime
 
 #### Step 6: Categorize Consequences
-
 Determine the significance of each failure:
-
 - **Hidden failures**: Not evident to operators (protective devices)
 - **Evident failures**: Operators know when it occurs
 - **Safety/Environmental**: Can hurt people or breach environmental standards
@@ -130,29 +114,24 @@ Determine the significance of each failure:
 - **Non-operational**: Only direct repair costs
 
 #### Step 7: Select Failure Management Tasks
-
 Choose appropriate maintenance strategy:
 
 **Proactive Tasks:**
-
 - **CBM** (Condition Based): Monitor condition, intervene when threshold reached
 - **FTM** (Fixed Time): Replace/overhaul at fixed intervals
 - **FF** (Failure Finding): Test hidden failures periodically
 
 **Default Actions:**
-
 - **Redesign**: One-off change to equipment/process/procedures
 - **OTF** (Operate to Failure): Accept failure, repair when occurs
 
 Each task must be:
-
 1. Technically feasible (can it be done?)
 2. Worth doing (does it address consequences cost-effectively?)
 
 ### Stage 3: Implementation
 
 Review and plan:
-
 - Maintenance schedules for CBM, FTM, FF tasks
 - One-off changes for redesign tasks
 - Implementation checklist for tracking
@@ -161,7 +140,6 @@ Review and plan:
 ### Stage 4: Reports & Export
 
 Generate comprehensive reports:
-
 - Summary statistics and metrics
 - Consequence breakdowns
 - Task type analysis
@@ -171,15 +149,13 @@ Generate comprehensive reports:
 
 ## RCM Decision Logic
 
-### For Safety/Environmental Consequences
-
+### For Safety/Environmental Consequences:
 1. Is a CBM task technically feasible and reduces risk to acceptable level? → Implement CBM
 2. If not, is FTM technically feasible and reduces risk to acceptable level? → Implement FTM
 3. If not, is FF technically feasible and reduces risk to acceptable level? → Implement FF
 4. If not, must Redesign to reduce risk
 
-### For Operational/Non-operational Consequences
-
+### For Operational/Non-operational Consequences:
 1. Is a CBM task technically feasible and cost-effective? → Implement CBM
 2. If not, is FTM technically feasible and cost-effective? → Implement FTM
 3. If not, is FF technically feasible and cost-effective? → Implement FF
@@ -188,22 +164,18 @@ Generate comprehensive reports:
 ## Example: Water Pump Station
 
 ### Asset Definition
-
 - **Asset**: Main Pump Assembly 1
 - **Components**: Centrifugal Pump, 250kW Motor, VFD, Flow Meter
 
 ### Function Example
-
 "To pump water from reservoir to distribution network at 153 L/s at 1,147 kPa"
 
 ### Functional Failure Examples
-
 1. Unable to pump any water
 2. Pumps water at less than 60 L/s
 3. Pumps water but pressure below 900 kPa
 
 ### Failure Mode Example
-
 **Component**: Pump Bearing
 **Failure Mode**: "Bearing seized due to lack of lubrication"
 **Effect**: Motor trips, standby pump activates, 2-hour downtime for repair
@@ -230,14 +202,12 @@ The application automatically saves your analysis in session state. To persist d
 ## Technical Details
 
 ### Application Structure
-
 - `rcm_fmeca_app.py`: Main Streamlit application
 - Session state for data persistence within session
 - JSON export/import for long-term storage
 - Responsive layout with multi-column design
 
 ### Data Model
-
 ```python
 {
   'asset_data': {...},
@@ -252,24 +222,20 @@ The application automatically saves your analysis in session state. To persist d
 ## Troubleshooting
 
 **Issue**: Application won't start
-
 - Ensure Python 3.8+ is installed
 - Verify all dependencies are installed: `pip install -r requirements.txt`
 
 **Issue**: Data lost after closing browser
-
 - Use Export function to save work before closing
 - Import JSON file to restore when reopening
 
 **Issue**: Large analysis is slow
-
 - Consider breaking complex assets into sub-systems
 - Use CSV export for large datasets
 
 ## References
 
 Based on:
-
 - Murrumbidgee Irrigation RCM Course Materials
 - RCM II by John Moubray
 - ISO 55000 Asset Management Standards
