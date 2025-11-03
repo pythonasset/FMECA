@@ -1,0 +1,264 @@
+{
+  "asset_information": {
+    "asset_name": "Tharbogang PS2 - Main Pump Assembly 1",
+    "asset_class": "Pump Station",
+    "asset_type": "Centrifugal Pump Assembly",
+    "site_location": "Tharbogang Pump Station 2"
+  },
+  "operating_context": {
+    "redundancy": "Duty/Standby configuration",
+    "utilization": "Operates 24/7 during irrigation season (Sept-April), intermittent during off-season. Average load 60-80% of capacity. Peak demand 6AM-4PM daily.",
+    "quality_standards": "Water quality must meet irrigation standards AS/NZS 4020:2018. Flow accuracy within ±5%. Pressure maintained at 1,147 kPa ±50 kPa.",
+    "seasonal_demands": "Peak demand during summer irrigation season (Nov-Feb). Reduced demand during winter (May-Aug). Critical asset during growing season.",
+    "skills_availability": "Qualified electricians and mechanics on-site during business hours. After-hours call-out available. Specialist pump technicians contracted with 2-day lead time.",
+    "spares_availability": "Critical spares (bearings, seals, impeller) stocked on-site. Motor and VFD spare available. Specialized parts require 1-2 week lead time.",
+    "logistics": "Workshop facilities on-site for minor repairs. Major overhauls require off-site specialist facility. Crane available for motor/pump removal.",
+    "operating_environment": "Outdoor installation, sheltered pump house. Temperature range 5-40°C. Dust and agricultural environment. Regular cleaning required.",
+    "safety_standards": "Compliant with AS/NZS 3000:2018 (electrical). Work Health & Safety Act 2011. High voltage electrical safety procedures required. Confined space entry procedures for pump house.",
+    "environmental_standards": "EPA license for water abstraction. Noise limits AS 2436-2010. No chemical storage. Biodegradable hydraulic oils used."
+  },
+  "components": [
+    "Centrifugal Pump",
+    "250kW Electric Motor",
+    "Variable Frequency Drive (VFD)",
+    "Flow Meter",
+    "Pressure Transmitter",
+    "Discharge Valve",
+    "Non-Return Valve",
+    "Suction Strainer",
+    "Coupling",
+    "Pump Bearings",
+    "Motor Bearings",
+    "Mechanical Seal",
+    "Lubrication System"
+  ],
+  "functions": [
+    {
+      "id": 1,
+      "type": "Primary Function",
+      "verb": "To pump",
+      "object": "water from reservoir to distribution network",
+      "performance_standard": "at flow rate between 60-280 L/s at 1,147 kPa",
+      "full_statement": "To pump water from reservoir to distribution network at flow rate between 60-280 L/s at 1,147 kPa"
+    },
+    {
+      "id": 2,
+      "type": "Control/Containment/Comfort",
+      "verb": "To display",
+      "object": "flow rate",
+      "performance_standard": "with accuracy of ±5% of actual flow",
+      "full_statement": "To display flow rate with accuracy of ±5% of actual flow"
+    },
+    {
+      "id": 3,
+      "type": "Control/Containment/Comfort",
+      "verb": "To display",
+      "object": "discharge pressure",
+      "performance_standard": "with accuracy of ±2% of actual pressure",
+      "full_statement": "To display discharge pressure with accuracy of ±2% of actual pressure"
+    },
+    {
+      "id": 4,
+      "type": "Protection",
+      "verb": "To be capable of stopping",
+      "object": "the pump motor",
+      "performance_standard": "in the event that discharge pressure exceeds 1,400 kPa",
+      "full_statement": "To be capable of stopping the pump motor in the event that discharge pressure exceeds 1,400 kPa"
+    },
+    {
+      "id": 5,
+      "type": "Safety/Structural Integrity",
+      "verb": "To contain",
+      "object": "all water and prevent leakage",
+      "performance_standard": "with zero detectable leaks during operation",
+      "full_statement": "To contain all water and prevent leakage with zero detectable leaks during operation"
+    }
+  ],
+  "functional_failures": [
+    {
+      "id": "FF-1.1",
+      "function_id": 1,
+      "function_statement": "To pump water from reservoir to distribution network at flow rate between 60-280 L/s at 1,147 kPa",
+      "description": "Unable to pump any water",
+      "category": "Complete loss of function"
+    },
+    {
+      "id": "FF-1.2",
+      "function_id": 1,
+      "function_statement": "To pump water from reservoir to distribution network at flow rate between 60-280 L/s at 1,147 kPa",
+      "description": "Pumps water at less than 60 L/s",
+      "category": "Below lower limit"
+    },
+    {
+      "id": "FF-1.3",
+      "function_id": 1,
+      "function_statement": "To pump water from reservoir to distribution network at flow rate between 60-280 L/s at 1,147 kPa",
+      "description": "Discharge pressure less than 900 kPa at design flow",
+      "category": "Partial loss of function"
+    },
+    {
+      "id": "FF-4.1",
+      "function_id": 4,
+      "function_statement": "To be capable of stopping the pump motor in the event that discharge pressure exceeds 1,400 kPa",
+      "description": "Fails to stop motor when pressure exceeds 1,400 kPa",
+      "category": "Complete loss of function"
+    }
+  ],
+  "failure_modes": [
+    {
+      "id": "FM-FF-1.1-1",
+      "functional_failure_id": "FF-1.1",
+      "component": "Pump Bearings",
+      "description": "Bearing seized due to lack of lubrication",
+      "category": "Lubrication failure",
+      "effects": {
+        "evidence": "High vibration, abnormal noise from pump, high motor current, eventual motor trip on overload. Alarm visible in control room.",
+        "safety_impact": "No immediate safety impact. Potential electrical hazard if motor continues to draw high current.",
+        "operational_impact": "Complete loss of pumping function. Standby pump automatically activated. No immediate impact to customers as redundancy available. Extended downtime affects seasonal capacity planning.",
+        "physical_damage": "Seized bearing damages pump shaft, mechanical seal, and potentially impeller. May damage motor coupling and motor bearings from excessive vibration.",
+        "repair_action": "Pump assembly must be disconnected and removed. Send to specialist workshop for bearing replacement, shaft inspection/replacement, seal replacement, and dynamic balance. Install spare pump assembly if available.",
+        "repair_time": 4,
+        "downtime": 336
+      },
+      "consequence_category": "Evident (Operational)",
+      "management_task": {
+        "task_type": "FTM - Fixed Time Maintenance",
+        "description": "Lubricate pump bearings every 500 operating hours using approved grease specification. Verify grease nipple clear. Record grease quantity used.",
+        "technically_feasible": "Yes",
+        "worth_doing": "Yes",
+        "justification": "Regular lubrication prevents bearing failure. Task is straightforward and can be completed during routine rounds. Cost of task ($50/500hrs = $350/year assuming 3,500 hrs/year operation) is significantly less than cost of failure (parts $12,000 + labour $8,000 + lost capacity during 2-week repair = $40,000). MTBF without lubrication estimated at 3 years.",
+        "cost": 350
+      }
+    },
+    {
+      "id": "FM-FF-1.1-2",
+      "functional_failure_id": "FF-1.1",
+      "component": "Mechanical Seal",
+      "description": "Mechanical seal fails due to normal wear",
+      "category": "Deterioration (wear, corrosion, fatigue)",
+      "effects": {
+        "evidence": "Water leakage from seal housing area. Initially minor drip, progresses to steady stream. Visible during daily inspection.",
+        "safety_impact": "Water leak creates slip hazard in pump house. Potential for water to reach electrical equipment if leak not addressed.",
+        "operational_impact": "Initial leak does not affect pump function. Progressive leak may cause cavitation and reduced flow. Severe leak may trigger low suction pressure alarm and automatic shutdown.",
+        "physical_damage": "Seal wear debris may damage impeller eye and bearing. Excessive leakage may cause shaft corrosion.",
+        "repair_action": "Drain pump and isolate. Remove pump coupling, unbolt pump from motor, remove impeller, replace mechanical seal. Reassemble, align, test run. Task requires confined space entry procedures.",
+        "repair_time": 8,
+        "downtime": 12
+      },
+      "consequence_category": "Evident (Safety/Environmental)",
+      "risk_assessment": {
+        "consequence": "4-High",
+        "likelihood": "3-Occasional",
+        "risk_score": 7,
+        "risk_level": "High"
+      },
+      "management_task": {
+        "task_type": "CBM - Condition Based Maintenance",
+        "description": "Daily visual inspection for seal leakage during operations rounds. If any leakage detected, schedule seal replacement within 1 week. Monitor seal flush water flow monthly.",
+        "technically_feasible": "Yes",
+        "worth_doing": "Yes",
+        "justification": "P-F interval is approximately 2-4 weeks from first drip to significant leak requiring shutdown. Daily inspection provides ample warning. Safety risk of slip hazard and electrical hazard justifies task. Condition monitoring allows planned replacement avoiding unscheduled shutdown. Seal useful life 3-5 years.",
+        "cost": 120
+      }
+    },
+    {
+      "id": "FM-FF-1.2-1",
+      "functional_failure_id": "FF-1.2",
+      "component": "Centrifugal Pump",
+      "description": "Impeller worn due to abrasive particle erosion",
+      "category": "Deterioration (wear, corrosion, fatigue)",
+      "effects": {
+        "evidence": "Gradual reduction in flow rate and pressure over months. HMI shows declining performance curve. Increased power consumption per unit flow.",
+        "safety_impact": "No direct safety impact.",
+        "operational_impact": "Reduced capacity affects ability to meet peak demand. May require running both duty and standby pumps simultaneously, reducing redundancy. Customer service may be affected during peak demand periods.",
+        "physical_damage": "Eroded impeller only. No secondary damage to other components.",
+        "repair_action": "Remove pump from service, disassemble, replace impeller, reassemble, align, and test. Can be done on-site with planned outage.",
+        "repair_time": 6,
+        "downtime": 8
+      },
+      "consequence_category": "Evident (Operational)",
+      "management_task": {
+        "task_type": "CBM - Condition Based Maintenance",
+        "description": "Monitor pump performance monthly: record flow rate, discharge pressure, and power consumption at standard operating point. Plot performance curve quarterly. Replace impeller when efficiency drops below 80% of design.",
+        "technically_feasible": "Yes",
+        "worth_doing": "Yes",
+        "justification": "Performance monitoring identifies gradual deterioration allowing planned replacement. P-F interval is 6-12 months. Task cost minimal (incorporated into routine operations). Planned replacement avoids peak season failure. Impeller useful life 4-7 years depending on water quality.",
+        "cost": 200
+      }
+    },
+    {
+      "id": "FM-FF-4.1-1",
+      "functional_failure_id": "FF-4.1",
+      "component": "Pressure Transmitter",
+      "description": "Pressure transmitter calibration drift or sensor failure",
+      "category": "Deterioration (wear, corrosion, fatigue)",
+      "effects": {
+        "evidence": "Hidden failure. Pressure transmitter reads incorrectly but provides a signal so system appears normal. Failure only evident when actual over-pressure event occurs and pump does not shut down.",
+        "safety_impact": "If over-pressure event occurs while transmitter is failed, no automatic shutdown occurs. Discharge pipeline could rupture causing: uncontrolled water release, property damage, potential injury from high-pressure water stream, flooding of low-lying areas.",
+        "operational_impact": "Pipeline rupture causes complete loss of water supply service. Emergency repairs required. Potential for $200,000+ damage to pipeline infrastructure.",
+        "physical_damage": "Pipeline rupture may damage pump station pipework, valves, meters. Flooding may damage electrical equipment.",
+        "repair_action": "For multiple failure: Emergency shutdown, isolate and drain pipeline, temporary pipeline bypass if available, excavate and repair pipeline rupture (1-3 days depending on location), replace/recalibrate pressure transmitter.",
+        "repair_time": 72,
+        "downtime": 96
+      },
+      "consequence_category": "Hidden (Safety/Environmental)",
+      "risk_assessment": {
+        "consequence": "5-Catastrophic",
+        "likelihood": "2-Unlikely",
+        "risk_score": 7,
+        "risk_level": "High"
+      },
+      "management_task": {
+        "task_type": "FF - Failure Finding",
+        "description": "Test pressure transmitter and high-pressure shutdown function every 6 months. Simulate high pressure signal or use test connection to verify trip point. Recalibrate if >2% drift detected.",
+        "technically_feasible": "Yes",
+        "worth_doing": "Yes",
+        "justification": "Hidden safety-critical function requires regular testing. MTBF of transmitter ~10 years. MTBF of over-pressure event ~5 years (based on historical VFD faults, valve closure events). Using failure finding formula: FFI = sqrt(2 × 10 × 5 / 0.5) = 14 months. Conservative 6-month interval selected given safety consequences. Test procedure takes 1 hour and can be done during planned maintenance window.",
+        "cost": 400
+      }
+    }
+  ],
+  "analysis_results": [
+    {
+      "failure_mode_id": "FM-FF-1.1-1",
+      "component": "Pump Bearings",
+      "failure_mode": "Bearing seized due to lack of lubrication",
+      "consequence": "Evident (Operational)",
+      "task_type": "FTM - Fixed Time Maintenance",
+      "task_description": "Lubricate pump bearings every 500 operating hours using approved grease specification. Verify grease nipple clear. Record grease quantity used.",
+      "frequency": "Every 500 operating hours (~2 months)",
+      "cost": 350
+    },
+    {
+      "failure_mode_id": "FM-FF-1.1-2",
+      "component": "Mechanical Seal",
+      "failure_mode": "Mechanical seal fails due to normal wear",
+      "consequence": "Evident (Safety/Environmental)",
+      "task_type": "CBM - Condition Based Maintenance",
+      "task_description": "Daily visual inspection for seal leakage during operations rounds. If any leakage detected, schedule seal replacement within 1 week. Monitor seal flush water flow monthly.",
+      "frequency": "Daily inspection, monthly monitoring",
+      "cost": 120
+    },
+    {
+      "failure_mode_id": "FM-FF-1.2-1",
+      "component": "Centrifugal Pump",
+      "failure_mode": "Impeller worn due to abrasive particle erosion",
+      "consequence": "Evident (Operational)",
+      "task_type": "CBM - Condition Based Maintenance",
+      "task_description": "Monitor pump performance monthly: record flow rate, discharge pressure, and power consumption at standard operating point. Plot performance curve quarterly. Replace impeller when efficiency drops below 80% of design.",
+      "frequency": "Monthly monitoring, quarterly analysis",
+      "cost": 200
+    },
+    {
+      "failure_mode_id": "FM-FF-4.1-1",
+      "component": "Pressure Transmitter",
+      "failure_mode": "Pressure transmitter calibration drift or sensor failure",
+      "consequence": "Hidden (Safety/Environmental)",
+      "task_type": "FF - Failure Finding",
+      "task_description": "Test pressure transmitter and high-pressure shutdown function every 6 months. Simulate high pressure signal or use test connection to verify trip point. Recalibrate if >2% drift detected.",
+      "frequency": "Every 6 months",
+      "cost": 400
+    }
+  ],
+  "export_date": "2025-01-20T10:30:00"
+}
