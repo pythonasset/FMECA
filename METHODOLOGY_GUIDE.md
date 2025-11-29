@@ -1,18 +1,20 @@
 # RCM Methodology & Workflow Guide
 
-## The RCM Process Flow
+## The RCM Process Flow (Multi-Asset Projects)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     STAGE 1: PLANNING                           │
-│  • Define Asset Boundaries                                      │
-│  • Identify Components                                          │
-│  • Document Operating Context                                   │
+│  • Create Project (Project No. + Description)                  │
+│  • Add Multiple Assets to Project                              │
+│  • Define Components per Asset                                 │
+│  • Document Operating Context per Asset                        │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                  STAGE 2: RCM ANALYSIS (FMECA)                  │
+│              STAGE 2: RCM ANALYSIS (FMECA)                      │
+│              [Select Asset from Project]                        │
 │                                                                  │
 │  Step 2: Functions        → What should it do?                  │
 │  Step 3: Functional      → How can it fail to do that?         │
@@ -21,12 +23,15 @@
 │  Step 5: Failure Effects → What happens when it fails?         │
 │  Step 6: Consequences    → How significant is the failure?     │
 │  Step 7: Task Selection  → How can we manage the failure?      │
+│                                                                  │
+│  [Repeat for each asset in project]                            │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                  STAGE 3: IMPLEMENTATION                        │
-│  • Develop Maintenance Schedules                                │
+│              [Select Asset from Project]                        │
+│  • Develop Maintenance Schedules per Asset                      │
 │  • Plan One-off Changes (Redesign)                             │
 │  • Assign Resources                                             │
 │  • Update Procedures                                            │
@@ -34,11 +39,12 @@
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   STAGE 4: SUSTAIN                              │
-│  • Monitor Performance                                          │
+│              STAGE 4: REPORTS & EXPORT                          │
+│  • Project-Level Summary (All Assets)                          │
+│  • Asset-Level Detailed Reports                                │
+│  • Export Complete Project or Individual Assets                │
+│  • Monitor Performance Across Project                           │
 │  • Review & Update Analysis                                     │
-│  • Continuous Improvement                                       │
-│  • Capture Learnings                                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

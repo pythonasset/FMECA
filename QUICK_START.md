@@ -22,34 +22,53 @@ streamlit run rcm_fmeca_app.py
 
 The application will open automatically in your browser at `http://localhost:8501`
 
-### Step 3: Try the Example
+### Step 3: Try the Example (Optional)
 
 1. Click "Stage 4: Reports & Export" in the sidebar
-2. Scroll to "Import Previous Analysis"
-3. Upload `example_pump_station_analysis.json`
-4. Click "Import Analysis Data"
+2. Navigate to "Export Data" tab
+3. Upload `example_pump_station_analysis.json` if available
+4. Click "Import Project Data"
 5. Navigate through the stages to see a complete example
 
-## Your First Analysis (30 minutes)
+## Your First Project (35 minutes)
 
-### Stage 1: Define Your Asset (5 min)
+### Stage 1: Create Project & Add Assets (10 min)
 
-1. Enter asset name (e.g., "Main Water Pump Station")
-2. Select asset class from dropdown
-3. Add components using the "Add Component" button
-   - Example: Motor, Pump, VFD, Valves
-4. Fill in operating context
-   - Focus on: redundancy, utilization, operating environment
-5. Click "Save" and proceed to Stage 2
+#### Create Your Project (2 min)
 
-### Stage 2: Conduct Analysis (20 min)
+1. Go to "Stage 1: Planning & Preparation"
+2. Enter Project No. (e.g., "RCM-2024-001")
+3. Enter Project Description (e.g., "Water Treatment Plant RCM")
+4. Click "💾 Save Project Information"
+
+#### Add First Asset (5 min)
+
+1. Enter asset name (e.g., "Main Water Pump")
+2. Select asset class from dropdown (e.g., "Pump Station")
+3. Enter asset type (e.g., "Centrifugal Pump Assembly")
+4. Enter site location (e.g., "Building A - Pump Room")
+5. Add components using "Add Component" button
+   - Example: Motor, Pump, Bearing, VFD, Valves
+6. Click "💾 Save New Asset"
+
+#### Add More Assets (3 min, optional)
+
+1. Repeat the process for each additional asset
+2. Edit any asset by clicking "✏️ Edit"
+3. Delete unwanted assets with "🗑️ Del"
+4. Each asset will have its own independent analysis
+
+### Stage 2: Conduct Analysis (20 min per asset)
+
+**IMPORTANT**: Select which asset to analyze from the dropdown at the top of Stage 2.
 
 #### Step 2: Functions (5 min)
 
-1. Define what your asset does
-2. Use format: Verb + Object + Performance Standard
-3. Start with primary function, then add safety/control functions
-4. Example: "To pump water at 200 L/s at 500 kPa"
+1. Select your asset from the dropdown
+2. Define what this asset does
+3. Use format: Verb + Object + Performance Standard
+4. Start with primary function, then add safety/control functions
+5. Example: "To pump water at 200 L/s at 500 kPa"
 
 #### Step 3-4: Failures & Modes (5 min)
 
@@ -77,39 +96,56 @@ The application will open automatically in your browser at `http://localhost:850
 2. System provides options based on consequence
 3. Validate task is feasible and worth doing
 
-### Stage 3: Implementation (3 min)
+**Repeat Stage 2 for each asset in your project**
 
-1. Review maintenance schedule
-2. Note any redesign tasks
-3. Use implementation checklist
+### Stage 3: Implementation (3 min per asset)
 
-### Stage 4: Export Results (2 min)
+1. Select asset for implementation planning
+2. Review maintenance schedule
+3. Note any redesign tasks
+4. Use implementation checklist
 
-1. Review summary report
-2. Export to CSV or JSON
-3. JSON format preserves complete analysis for future updates
+### Stage 4: View Reports & Export (2 min)
+
+#### Project Summary Tab
+1. View overall project statistics
+2. See all assets and their analysis status
+3. Review aggregate costs
+
+#### Asset Reports Tab
+1. Select an asset to view detailed reports
+2. Review FMECA tables
+3. Check consequence breakdowns
+
+#### Export Data Tab
+1. **Export Complete Project** (JSON) - includes all assets
+2. **Export Single Asset** (CSV) - for specific asset results
+3. JSON format preserves complete project for future updates
 
 ## Tips for Success
 
-✅ **Start Small**: Begin with 1-2 critical functions
+✅ **Project Organization**: Use meaningful project numbers
+✅ **Asset Boundaries**: Define clear scope for each asset
+✅ **One Asset at a Time**: Complete analysis for one asset before moving to next
+✅ **Start Small**: Begin with 1-2 critical functions per asset
 ✅ **Be Specific**: Use measurable performance standards
 ✅ **Focus on Real Failures**: Only analyze likely failure modes
-✅ **Save Often**: Export your work as JSON frequently
-✅ **Use Examples**: Reference the pump station example for guidance
+✅ **Save Often**: Export project as JSON regularly
+✅ **Consistent Approach**: Apply same rigor across all assets
 
 ## Common Workflows
 
-### New Asset Analysis
+### New Project with Multiple Assets
 
-Stage 1 → Stage 2 (all steps) → Stage 3 → Stage 4 (Export)
+Stage 1 (Create Project + Add All Assets) → Stage 2 (Analyze Asset 1) → Stage 2 (Analyze Asset 2) → ... → Stage 3 (Each Asset) → Stage 4 (Project Export)
 
-### Update Existing Analysis
+### Update Existing Project
 
-Stage 4 (Import) → Stage 2 (add/modify) → Stage 4 (Export)
+Stage 4 (Import Project) → Stage 1 (Add/Edit Assets) → Stage 2 (Modify Analyses) → Stage 4 (Export Project)
 
-### Generate Report Only
+### Generate Project Report
 
-Stage 4 (Import) → Stage 4 (Reports)
+Stage 4 (Import Project) → Stage 4 (View Reports)
 
 ## Keyboard Shortcuts
 

@@ -1,17 +1,23 @@
 # FMECA & RCM Analysis Tool
 
-A comprehensive Streamlit application for conducting Failure Modes, Effects and Criticality Analysis (FMECA) and Reliability Centered Maintenance (RCM) analysis on infrastructure assets.
+A comprehensive Streamlit application for conducting Failure Modes, Effects and Criticality Analysis (FMECA) and Reliability Centered Maintenance (RCM) analysis on infrastructure assets with **multi-asset project management**.
 
 ## Overview
 
-This application implements the complete RCM methodology based on the Murrumbidgee Irrigation RCM Course materials, guiding users through:
+This application implements the complete RCM methodology based on the Murrumbidgee Irrigation RCM Course materials, enabling project-based analysis across multiple assets:
 
-- **Stage 1: Planning & Preparation** - Define assets and operating context
-- **Stage 2: RCM Analysis (FMECA)** - Systematic analysis of failures and consequences
-- **Stage 3: Implementation** - Plan maintenance schedules and changes
-- **Stage 4: Reports & Export** - Generate reports and export results
+- **Stage 1: Planning & Preparation** - Create projects and manage multiple assets
+- **Stage 2: RCM Analysis (FMECA)** - Systematic analysis of failures and consequences per asset
+- **Stage 3: Implementation** - Plan maintenance schedules and changes per asset
+- **Stage 4: Reports & Export** - Generate project-level and asset-level reports
 
 ## Features
+
+### Project Management (NEW)
+- **Multi-Asset Projects**: Organize multiple assets under a single project number
+- **Project-Level Tracking**: Monitor analysis progress across all assets
+- **Centralized Export**: Export complete projects or individual assets
+- **Aggregate Reporting**: View project-wide statistics and costs
 
 ### Core RCM Methodology
 - **7 RCM Questions Framework**: Structured approach answering the fundamental questions of RCM
@@ -20,6 +26,8 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - **Task Selection**: Intelligent selection of maintenance strategies (CBM, FTM, FF, Redesign, OTF)
 
 ### Key Capabilities
+- ✅ **Project-based organization** with unique project numbers
+- ✅ **Multiple assets per project** with independent analyses
 - ✅ Asset and component definition with hierarchical structure
 - ✅ Operating context documentation
 - ✅ Function identification with performance standards
@@ -29,8 +37,8 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - ✅ Risk-based consequence assessment
 - ✅ Maintenance task selection and validation
 - ✅ Cost estimation and benefit analysis
-- ✅ Implementation planning
-- ✅ Report generation and data export
+- ✅ Implementation planning per asset
+- ✅ **Project-level and asset-level reporting**
 - ✅ Import/export for data persistence
 
 ## Installation
@@ -63,20 +71,33 @@ streamlit run rcm_fmeca_app.py
 
 ### Stage 1: Planning & Preparation
 
-1. **Define Your Asset**
+#### Create Your Project
+
+1. **Define Project Information**
+   - Enter Project No. (e.g., "RCM-2024-001")
+   - Enter Project Description (e.g., "Water Treatment Plant RCM Analysis")
+   - Click "Save Project Information"
+
+2. **Add Assets to Project**
    - Enter asset name (e.g., "Tharbogang PS2 - Jockey Pump Assembly 1")
    - Select asset class (Pump Station, Water Treatment Plant, etc.)
    - Specify asset type and location
-   - Define components (Motor, Pump, VFD, Flow Meter, etc.)
+   - Define components for this asset (Motor, Pump, VFD, Flow Meter, etc.)
+   - Click "Save New Asset"
+   - Repeat for all assets in your project
 
-2. **Document Operating Context**
-   - Redundancy configuration (stand-alone, duty/standby)
-   - Utilization patterns and loading
-   - Quality standards and seasonal demands
-   - Skills and spares availability
-   - Operating environment and standards
+3. **Manage Assets**
+   - **Edit**: Click the "Edit" button next to any asset to modify its details
+   - **Delete**: Remove assets that are no longer needed
+   - **View**: See all assets listed under your project
+
+**Note**: You can add any number of assets to a project. Each asset will have its own independent RCM analysis.
 
 ### Stage 2: RCM Analysis (FMECA)
+
+**Select an Asset**: Choose which asset to analyze from the dropdown menu at the top of Stage 2.
+
+Each asset's analysis is stored independently, allowing you to:
 
 #### Step 2: Identify Functions
 Define what the asset is supposed to do:
@@ -131,7 +152,9 @@ Each task must be:
 
 ### Stage 3: Implementation
 
-Review and plan:
+**Select an Asset**: Choose which asset to plan implementation for.
+
+Review and plan for each asset:
 - Maintenance schedules for CBM, FTM, FF tasks
 - One-off changes for redesign tasks
 - Implementation checklist for tracking
@@ -139,13 +162,26 @@ Review and plan:
 
 ### Stage 4: Reports & Export
 
-Generate comprehensive reports:
-- Summary statistics and metrics
+Generate project-level and asset-level reports:
+
+#### Project Summary Tab
+- Overall statistics across all assets
+- Total functions, failure modes, and tasks
+- Aggregate annual maintenance costs
+- Asset overview table
+
+#### Asset Reports Tab
+- **Select an Asset**: Choose which asset to view detailed reports for
+- Individual asset analysis statistics
+- Detailed FMECA tables per asset
 - Consequence breakdowns
 - Task type analysis
-- Detailed FMECA tables
-- Export to CSV or JSON
-- Import previous analyses
+
+#### Export Data Tab
+- **Export Complete Project**: Download all assets as JSON
+- **Export Single Asset**: Download individual asset analysis as CSV
+- **Import Project**: Upload previously saved projects
+- Maintains all asset data and analyses
 
 ## RCM Decision Logic
 
@@ -184,38 +220,62 @@ Generate comprehensive reports:
 
 ## Data Persistence
 
-The application automatically saves your analysis in session state. To persist data:
+The application uses a project-based data model with automatic saving:
 
-1. **Export**: Use "Export to JSON" to save complete analysis
-2. **Import**: Upload JSON file to restore previous work
-3. **CSV Export**: Export results table for external analysis
+1. **Project Export**: Export entire project (all assets) as JSON
+2. **Asset Export**: Export individual asset analysis as CSV
+3. **Import**: Upload JSON project file to restore complete project
+4. **Auto-save**: Automatic session saving during active use
+
+**Recommended Workflow:**
+- Export project JSON regularly for backup
+- Use asset CSV for sharing specific results
+- Import project JSON to resume work across sessions
 
 ## Tips for Effective Analysis
 
-1. **Be Specific**: Use precise, quantifiable performance standards
-2. **Focus on Real Failures**: Only analyze failure modes that are reasonably likely
-3. **Document Thoroughly**: Complete failure effects enable better decision-making
-4. **Think Zero-Based**: Describe effects assuming no current maintenance (worst case)
-5. **Validate Tasks**: Ensure tasks are both feasible and cost-effective
-6. **Regular Reviews**: Update analysis as conditions change
+1. **Project Organization**: Group related assets under meaningful project numbers
+2. **Asset Scope**: Define clear boundaries for each asset to avoid overlap
+3. **Be Specific**: Use precise, quantifiable performance standards
+4. **Focus on Real Failures**: Only analyze failure modes that are reasonably likely
+5. **Document Thoroughly**: Complete failure effects enable better decision-making
+6. **Think Zero-Based**: Describe effects assuming no current maintenance (worst case)
+7. **Validate Tasks**: Ensure tasks are both feasible and cost-effective
+8. **Regular Reviews**: Update analysis as conditions change
+9. **Consistent Approach**: Apply the same rigor across all assets in a project
 
 ## Technical Details
 
 ### Application Structure
 - `rcm_fmeca_app.py`: Main Streamlit application
-- Session state for data persistence within session
+- Project-based session state management
+- Multi-asset support with independent analyses
 - JSON export/import for long-term storage
 - Responsive layout with multi-column design
 
 ### Data Model
 ```python
 {
-  'asset_data': {...},
-  'operating_context': {...},
-  'functions': [...],
-  'functional_failures': [...],
-  'failure_modes': [...],
-  'analysis_results': [...]
+  'project_information': {
+    'project_no': str,
+    'project_description': str,
+    'created_date': str,
+    'last_modified': str
+  },
+  'assets': [
+    {
+      'asset_name': str,
+      'asset_class': str,
+      'asset_type': str,
+      'site_location': str,
+      'components': [...],
+      'operating_context': {...},
+      'functions': [...],
+      'functional_failures': [...],
+      'failure_modes': [...],
+      'analysis_results': [...]
+    }
+  ]
 }
 ```
 
