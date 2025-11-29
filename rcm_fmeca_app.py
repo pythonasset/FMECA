@@ -230,6 +230,101 @@ def load_import_data(import_data):
         st.error(f"Error loading data: {str(e)}")
         return False
 
+# Autosave/Restore Functions
+def get_autosave_path():
+    """Get the path for the autosave file"""
+    return os.path.join(os.path.dirname(__file__), '.autosave.json')
+
+def autosave_session_data():
+    """Automatically save session state to a local file"""
+    try:
+        autosave_path = get_autosave_path()
+        
+        # Only save if there's meaningful data (asset name is set)
+        if not st.session_state.asset_data.get('asset_name'):
+            return
+        
+        save_data = {
+            "application_info": {
+                "name": APP_NAME,
+                "version": APP_VERSION,
+                "authority": AUTHORITY_NAME,
+                "department": DEPARTMENT
+            },
+            "asset_information": st.session_state.asset_data,
+            "operating_context": st.session_state.operating_context,
+            "components": st.session_state.get('components', []),
+            "functions": st.session_state.functions,
+            "functional_failures": st.session_state.functional_failures,
+            "failure_modes": st.session_state.failure_modes,
+            "analysis_results": st.session_state.analysis_results,
+            "current_stage": st.session_state.current_stage,
+            "autosave_date": datetime.now().isoformat()
+        }
+        
+        with open(autosave_path, 'w') as f:
+            json.dump(save_data, f, indent=2)
+        
+    except Exception as e:
+        # Silently fail - don't interrupt user workflow
+        print(f"Autosave error: {str(e)}")
+
+def restore_session_data():
+    """Restore session state from autosave file if it exists"""
+    try:
+        autosave_path = get_autosave_path()
+        
+        # Check if autosave file exists
+        if not os.path.exists(autosave_path):
+            return False
+        
+        # Only restore if current session is empty (asset name not set)
+        if st.session_state.asset_data.get('asset_name'):
+            return False
+        
+        with open(autosave_path, 'r') as f:
+            saved_data = json.load(f)
+        
+        # Load the saved data
+        if "asset_information" in saved_data:
+            st.session_state.asset_data = saved_data["asset_information"]
+        
+        if "operating_context" in saved_data:
+            st.session_state.operating_context = saved_data["operating_context"]
+        
+        if "components" in saved_data:
+            st.session_state.components = saved_data["components"]
+        
+        if "functions" in saved_data:
+            st.session_state.functions = saved_data["functions"]
+        
+        if "functional_failures" in saved_data:
+            st.session_state.functional_failures = saved_data["functional_failures"]
+        
+        if "failure_modes" in saved_data:
+            st.session_state.failure_modes = saved_data["failure_modes"]
+        
+        if "analysis_results" in saved_data:
+            st.session_state.analysis_results = saved_data["analysis_results"]
+        
+        if "current_stage" in saved_data:
+            st.session_state.current_stage = saved_data["current_stage"]
+        
+        return True
+        
+    except Exception as e:
+        print(f"Restore error: {str(e)}")
+        return False
+
+def clear_autosave():
+    """Clear the autosave file"""
+    try:
+        autosave_path = get_autosave_path()
+        if os.path.exists(autosave_path):
+            os.remove(autosave_path)
+    except Exception as e:
+        print(f"Clear autosave error: {str(e)}")
+
 # Sidebar Navigation
 def sidebar_navigation():
     """Create sidebar navigation"""
@@ -328,12 +423,18 @@ def sidebar_navigation():
             import_data = json.load(uploaded_file)
             if st.sidebar.button("🔄 Load Data", use_container_width=True):
                 load_import_data(import_data)
+                autosave_session_data()
                 st.sidebar.success("✅ Data imported successfully!")
                 st.rerun()
         except json.JSONDecodeError:
             st.sidebar.error("❌ Invalid JSON file format")
         except Exception as e:
             st.sidebar.error(f"❌ Error loading file: {str(e)}")
+    
+    # Autosave Management
+    if st.sidebar.button("🗑️ Clear Autosave", use_container_width=True, help="Clear automatically saved session data"):
+        clear_autosave()
+        st.sidebar.success("✅ Autosave cleared!")
     
     # Application Information
     st.sidebar.markdown("---")
@@ -347,6 +448,11 @@ def sidebar_navigation():
             st.markdown(f"**Contact:** {CONTACT_EMAIL}")
 
 sidebar_navigation()
+
+# Periodic autosave on every page render (as a safety net)
+# This ensures data is saved even if a save button was missed
+if st.session_state.asset_data.get('asset_name'):
+    autosave_session_data()
 
 # Main content area
 st.markdown("# 🔧 FMECA & RCM Analysis Tool")
@@ -744,6 +850,7 @@ def stage_1_planning():
                 'asset_type': asset_type,
                 'site_location': site_location
             }
+            autosave_session_data()
             st.success("✅ Asset information saved!")
     
     with col2:
@@ -757,6 +864,7 @@ def stage_1_planning():
         if st.button("➕ Add Component"):
             if new_component and new_component not in st.session_state.components:
                 st.session_state.components.append(new_component)
+                autosave_session_data()
                 st.success(f"Added: {new_component}")
         
         if st.session_state.components:
@@ -768,6 +876,7 @@ def stage_1_planning():
                 with col_b:
                     if st.button("🗑️", key=f"del_comp_{i}"):
                         st.session_state.components.pop(i)
+                        autosave_session_data()
                         st.rerun()
     
     # Operating Context
@@ -854,6 +963,7 @@ def stage_1_planning():
             'safety_standards': safety_standards,
             'environmental_standards': environmental_standards
         }
+        autosave_session_data()
         st.success("✅ Operating context saved!")
     
     if st.session_state.asset_data.get('asset_name'):
@@ -930,6 +1040,7 @@ def stage_2_analysis():
                     'full_statement': f"{function_verb} {function_object} {performance_std}".strip()
                 }
                 st.session_state.functions.append(function)
+                autosave_session_data()
                 st.success(f"✅ Function {function['id']} added!")
                 st.rerun()
         
@@ -948,6 +1059,7 @@ def stage_2_analysis():
             if func_to_delete != "None" and st.button("🗑️ Delete Selected Function"):
                 func_id = int(func_to_delete.split(":")[0].split()[-1])
                 st.session_state.functions = [f for f in st.session_state.functions if f['id'] != func_id]
+                autosave_session_data()
                 st.success("Function deleted!")
                 st.rerun()
     
@@ -988,6 +1100,7 @@ def stage_2_analysis():
                         'category': failure_category
                     }
                     st.session_state.functional_failures.append(failure)
+                    autosave_session_data()
                     st.success(f"✅ Functional Failure {failure['id']} added!")
                     st.rerun()
             
@@ -1056,6 +1169,7 @@ def stage_2_analysis():
                         'category': failure_mode_category
                     }
                     st.session_state.failure_modes.append(mode)
+                    autosave_session_data()
                     st.success(f"✅ Failure Mode {mode['id']} added!")
                     st.rerun()
             
@@ -1133,6 +1247,7 @@ def stage_2_analysis():
                             'repair_time': repair_time,
                             'downtime': downtime
                         }
+                        autosave_session_data()
                         st.success(f"✅ Failure effects added to {mode_id}")
                         st.rerun()
     
@@ -1275,6 +1390,7 @@ def stage_2_analysis():
                                 'risk_score': risk_score,
                                 'risk_level': risk_level
                             }
+                        autosave_session_data()
                         st.success(f"✅ Consequence category saved for {mode_id}")
                         st.rerun()
     
@@ -1432,7 +1548,6 @@ def stage_2_analysis():
                         for mode in st.session_state.failure_modes:
                             if mode['id'] == mode_id:
                                 mode['management_task'] = task
-                                st.success(f"✅ Task saved for {mode_id}")
                                 
                                 # Also add to analysis results
                                 result = {
@@ -1446,6 +1561,8 @@ def stage_2_analysis():
                                     'cost': total_cost
                                 }
                                 st.session_state.analysis_results.append(result)
+                                autosave_session_data()
+                                st.success(f"✅ Task saved for {mode_id}")
                                 st.rerun()
                     else:
                         st.error("Task must be both technically feasible and worth doing!")
@@ -1716,7 +1833,7 @@ def stage_4_reports():
                     st.session_state.functional_failures = imported_data.get('functional_failures', [])
                     st.session_state.failure_modes = imported_data.get('failure_modes', [])
                     st.session_state.analysis_results = imported_data.get('analysis_results', [])
-                    
+                    autosave_session_data()
                     st.success("✅ Analysis data imported successfully!")
                     st.rerun()
             except Exception as e:

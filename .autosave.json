@@ -1,0 +1,22 @@
+{
+  "application_info": {
+    "name": "FMECA & RCM Analysis Tool",
+    "version": "1.0.0",
+    "authority": "**********************",
+    "department": "Asset Management"
+  },
+  "asset_information": {
+    "asset_name": "Pump 2",
+    "asset_class": "Pump Station",
+    "asset_type": "PMP000001",
+    "site_location": "City of Wombat"
+  },
+  "operating_context": {},
+  "components": [],
+  "functions": [],
+  "functional_failures": [],
+  "failure_modes": [],
+  "analysis_results": [],
+  "current_stage": 1,
+  "autosave_date": "2025-11-27T16:27:30.564565"
+}
