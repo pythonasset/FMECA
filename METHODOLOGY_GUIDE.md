@@ -87,7 +87,8 @@ Then apply Task Selection Logic...
 
 ## Task Selection Logic
 
-### For Safety/Environmental Consequences (RED):
+### For Safety/Environmental Consequences (RED)
+
 ```
 1. Is CBM feasible AND reduces risk to acceptable? 
    └─ YES → Apply CBM
@@ -104,7 +105,8 @@ Then apply Task Selection Logic...
 4. MUST REDESIGN (Safety risk unacceptable)
 ```
 
-### For Operational/Non-operational (ORANGE/YELLOW):
+### For Operational/Non-operational (ORANGE/YELLOW)
+
 ```
 1. Is CBM feasible AND cost-effective?
    └─ YES → Apply CBM
@@ -125,44 +127,52 @@ Then apply Task Selection Logic...
 ## Task Types Explained
 
 ### CBM - Condition Based Maintenance
+
 **When:** Failure gives warning signs
 **How:** Monitor condition, act when threshold reached
 **Example:** "Check bearing temperature weekly. Replace if >70°C"
 
 **Requirements:**
+
 - Detectable potential failure condition
 - Consistent P-F interval
 - Can monitor more frequently than P-F interval
 - Time to act before functional failure
 
 ### FTM - Fixed Time Maintenance  
+
 **When:** Failure probability increases with age
 **How:** Replace/overhaul at fixed interval
 **Example:** "Replace filter every 500 hours"
 
 **Requirements:**
+
 - Age-related failure pattern
 - Known useful life
 - Interval less than useful life
 - Cost-effective vs. consequence
 
 ### FF - Failure Finding
+
 **When:** Hidden failures (protective devices)
 **How:** Periodically test if still functional
 **Example:** "Test pressure relief valve monthly"
 
 **Requirements:**
+
 - Function is hidden
 - Test doesn't increase risk
 - Practical to test at required frequency
 - Reduces multiple failure risk
 
 ### Redesign
+
 **When:** No effective proactive task OR unacceptable risk
 **How:** One-off change to equipment/process/procedure
 **Example:** "Install redundant pressure transmitter"
 
 ### OTF - Operate to Failure
+
 **When:** Consequence acceptable AND no cost-effective proactive task
 **How:** Accept failure, repair when occurs
 **Example:** "Replace light bulb when it fails"
@@ -228,7 +238,8 @@ Inspection Frequency = 1/2 to 1/3 of P-F Interval
 
 ## Cost-Effectiveness Analysis
 
-### For FTM Task:
+### For FTM Task
+
 ```
 Annual Cost of Task = (Labour + Parts + Admin) × (365 / Interval)
 Annual Cost of Failure = (Repair Cost + Consequence Cost) × (365 / MTBF)
@@ -237,7 +248,8 @@ Task is Worth Doing if:
 Annual Cost of Task < Annual Cost of Failure
 ```
 
-### Example:
+### Example
+
 - Replace gasket every 2 years: $350 → $175/year
 - Failure every 3 years: $350 + $1,000 → $450/year
 - Task is worth doing! ($175 < $450)
@@ -253,27 +265,31 @@ Annual Cost of Task < Annual Cost of Failure
 | **1-Rare** | 2 (L) | 3 (L) | 4 (L) | 5 (M) | 6 (M) |
 
 Risk Score = Consequence + Likelihood
+
 - **2-5**: Low Risk (L) - May accept or apply low-cost controls
 - **6-7**: Medium Risk (M) - Should implement controls
 - **8-10**: High Risk (H) - Must implement controls
 
 ## Data Collection Tips
 
-### For Operating Context:
+### For Operating Context
+
 - Review P&IDs, layout drawings
 - Interview operators and maintainers  
 - Check maintenance history
 - Review OEM manuals
 - Understand seasonal patterns
 
-### For Failure Modes:
+### For Failure Modes
+
 - Use maintenance work order history
 - Consult with experienced staff
 - Review similar equipment failures
 - Check industry databases
 - Consider environmental factors
 
-### For P-F Intervals:
+### For P-F Intervals
+
 - Analyze historical condition data
 - Consult OEM recommendations
 - Reference industry standards
@@ -283,6 +299,7 @@ Risk Score = Consequence + Likelihood
 ## Common Pitfalls to Avoid
 
 ❌ **Don't:**
+
 - Analyze at wrong level (too high = miss details, too low = overwhelming)
 - Combine different failure modes with different effects
 - Describe effects assuming current maintenance (describe worst case)
@@ -290,6 +307,7 @@ Risk Score = Consequence + Likelihood
 - Implement tasks without feasibility/worth doing analysis
 
 ✅ **Do:**
+
 - Focus on functions users care about
 - Be specific with performance standards
 - Consider operating context throughout
@@ -299,6 +317,7 @@ Risk Score = Consequence + Likelihood
 ## Success Metrics
 
 Track your RCM effectiveness:
+
 - **Reliability**: MTBF increasing?
 - **Availability**: Uptime improving?
 - **Cost**: Maintenance cost per unit output decreasing?
