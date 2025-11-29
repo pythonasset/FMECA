@@ -5,18 +5,209 @@
     "authority": "**********************",
     "department": "Asset Management"
   },
+  "project_information": {
+    "project_no": "Test0001",
+    "project_description": "Pump Station Analysis",
+    "created_date": "",
+    "last_modified": "2025-11-29T12:00:00.781786"
+  },
+  "assets": [
+    {
+      "asset_name": "Pump No. 1",
+      "asset_class": "Pump Station",
+      "asset_type": "Pumps",
+      "site_location": "Mangadang WPS",
+      "components": [
+        "VSD Pump 1",
+        "Motor Pump 1",
+        "Motor Control Center Pump 1"
+      ],
+      "operating_context": {},
+      "functions": [
+        {
+          "id": 1,
+          "type": "Primary Function",
+          "verb": "To pump water through irrigation system to clients",
+          "object": "water supply",
+          "performance_standard": "at 300 L/s",
+          "full_statement": "To pump water through irrigation system to clients water supply at 300 L/s"
+        }
+      ],
+      "functional_failures": [
+        {
+          "id": "FF-1.1",
+          "function_id": 1,
+          "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
+          "description": "Power loss leading to total failure of Pump to operate.",
+          "category": "Complete loss of function"
+        },
+        {
+          "id": "FF-1.2",
+          "function_id": 1,
+          "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
+          "description": "Drive shaft failure",
+          "category": "Complete loss of function"
+        }
+      ],
+      "failure_modes": [
+        {
+          "id": "FM-FF-1.1-1",
+          "functional_failure_id": "FF-1.1",
+          "component": "Motor Control Center Pump 1",
+          "description": "Thunderstorm causes failure of the transformer",
+          "category": "Overloading",
+          "effects": {
+            "evidence": "Pump shuts down",
+            "safety_impact": "Potential human injury",
+            "operational_impact": "No water",
+            "physical_damage": "Fire in Switchboard",
+            "repair_action": "Replace damaged parts in Motor Control Centre and/or Electrical system",
+            "repair_time": 4.0,
+            "downtime": 5.0
+          },
+          "consequence_category": "Evident (Safety/Environmental)",
+          "risk_assessment": {
+            "consequence": "4-High",
+            "likelihood": "3-Occasional",
+            "risk_score": 7,
+            "risk_level": "Medium"
+          },
+          "management_task": {
+            "task_type": "Redesign",
+            "description": "",
+            "technically_feasible": "Yes",
+            "worth_doing": "Yes",
+            "justification": "",
+            "cost": 28000.0
+          }
+        }
+      ],
+      "analysis_results": [
+        {
+          "failure_mode_id": "FM-FF-1.1-1",
+          "component": "Motor Control Center Pump 1",
+          "failure_mode": "Thunderstorm causes failure of the transformer",
+          "consequence": "Evident (Safety/Environmental)",
+          "task_type": "Redesign",
+          "task_description": "",
+          "frequency": "",
+          "cost": 28000.0
+        }
+      ]
+    },
+    {
+      "asset_name": "Pump No. 2",
+      "asset_class": "Pump Station",
+      "asset_type": "Pumps",
+      "site_location": "Mangadang WPS",
+      "components": [
+        "Motor Control Center Pump 1",
+        "Motor Pump 2",
+        "VSD Pump 2"
+      ],
+      "operating_context": {},
+      "functions": [],
+      "functional_failures": [],
+      "failure_modes": [],
+      "analysis_results": []
+    },
+    {
+      "asset_name": "Pump No. 3",
+      "asset_class": "Pump Station",
+      "asset_type": "Pumps",
+      "site_location": "Mangadang WPS",
+      "components": [],
+      "operating_context": {},
+      "functions": [],
+      "functional_failures": [],
+      "failure_modes": [],
+      "analysis_results": []
+    }
+  ],
+  "current_asset_index": 1,
   "asset_information": {
-    "asset_name": "Pump 2",
-    "asset_class": "Pump Station",
-    "asset_type": "PMP000001",
-    "site_location": "City of Wombat"
+    "asset_name": "",
+    "asset_class": "",
+    "asset_type": "",
+    "site_location": ""
   },
   "operating_context": {},
-  "components": [],
-  "functions": [],
-  "functional_failures": [],
-  "failure_modes": [],
-  "analysis_results": [],
-  "current_stage": 1,
-  "autosave_date": "2025-11-27T16:27:30.564565"
+  "components": [
+    "VSD Pump 1",
+    "Motor Pump 1",
+    "Motor Control Center Pump 1"
+  ],
+  "functions": [
+    {
+      "id": 1,
+      "type": "Primary Function",
+      "verb": "To pump water through irrigation system to clients",
+      "object": "water supply",
+      "performance_standard": "at 300 L/s",
+      "full_statement": "To pump water through irrigation system to clients water supply at 300 L/s"
+    }
+  ],
+  "functional_failures": [
+    {
+      "id": "FF-1.1",
+      "function_id": 1,
+      "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
+      "description": "Power loss leading to total failure of Pump to operate.",
+      "category": "Complete loss of function"
+    },
+    {
+      "id": "FF-1.2",
+      "function_id": 1,
+      "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
+      "description": "Drive shaft failure",
+      "category": "Complete loss of function"
+    }
+  ],
+  "failure_modes": [
+    {
+      "id": "FM-FF-1.1-1",
+      "functional_failure_id": "FF-1.1",
+      "component": "Motor Control Center Pump 1",
+      "description": "Thunderstorm causes failure of the transformer",
+      "category": "Overloading",
+      "effects": {
+        "evidence": "Pump shuts down",
+        "safety_impact": "Potential human injury",
+        "operational_impact": "No water",
+        "physical_damage": "Fire in Switchboard",
+        "repair_action": "Replace damaged parts in Motor Control Centre and/or Electrical system",
+        "repair_time": 4.0,
+        "downtime": 5.0
+      },
+      "consequence_category": "Evident (Safety/Environmental)",
+      "risk_assessment": {
+        "consequence": "4-High",
+        "likelihood": "3-Occasional",
+        "risk_score": 7,
+        "risk_level": "Medium"
+      },
+      "management_task": {
+        "task_type": "Redesign",
+        "description": "",
+        "technically_feasible": "Yes",
+        "worth_doing": "Yes",
+        "justification": "",
+        "cost": 28000.0
+      }
+    }
+  ],
+  "analysis_results": [
+    {
+      "failure_mode_id": "FM-FF-1.1-1",
+      "component": "Motor Control Center Pump 1",
+      "failure_mode": "Thunderstorm causes failure of the transformer",
+      "consequence": "Evident (Safety/Environmental)",
+      "task_type": "Redesign",
+      "task_description": "",
+      "frequency": "",
+      "cost": 28000.0
+    }
+  ],
+  "current_stage": 2,
+  "autosave_date": "2025-11-29T12:24:05.504121"
 }

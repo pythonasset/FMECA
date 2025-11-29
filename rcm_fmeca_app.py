@@ -139,6 +139,24 @@ def initialize_session_state():
     if 'current_stage' not in st.session_state:
         st.session_state.current_stage = 1
     
+    # Project-level data
+    if 'project_data' not in st.session_state:
+        st.session_state.project_data = {
+            'project_no': '',
+            'project_description': '',
+            'created_date': '',
+            'last_modified': ''
+        }
+    
+    # Assets list - each project can have multiple assets
+    if 'assets' not in st.session_state:
+        st.session_state.assets = []
+    
+    # Current selected asset index
+    if 'current_asset_index' not in st.session_state:
+        st.session_state.current_asset_index = None
+    
+    # Legacy compatibility - will be deprecated
     if 'asset_data' not in st.session_state:
         st.session_state.asset_data = {
             'asset_name': '',
@@ -173,7 +191,8 @@ initialize_session_state()
 # Import/Export Helper Functions
 def create_export_data():
     """Create export data structure from session state"""
-    if not st.session_state.asset_data.get('asset_name'):
+    # Check if there's project data or legacy asset data
+    if not st.session_state.project_data.get('project_no') and not st.session_state.asset_data.get('asset_name'):
         return None
     
     export_data = {
@@ -183,6 +202,9 @@ def create_export_data():
             "authority": AUTHORITY_NAME,
             "department": DEPARTMENT
         },
+        "project_information": st.session_state.project_data,
+        "assets": st.session_state.assets,
+        # Legacy support - for backward compatibility
         "asset_information": st.session_state.asset_data,
         "operating_context": st.session_state.operating_context,
         "components": st.session_state.get('components', []),
@@ -197,7 +219,15 @@ def create_export_data():
 def load_import_data(import_data):
     """Load imported data into session state"""
     try:
-        # Load asset information
+        # Load project information (new format)
+        if "project_information" in import_data:
+            st.session_state.project_data = import_data["project_information"]
+        
+        # Load assets (new format)
+        if "assets" in import_data:
+            st.session_state.assets = import_data["assets"]
+        
+        # Load asset information (legacy format)
         if "asset_information" in import_data:
             st.session_state.asset_data = import_data["asset_information"]
         
@@ -240,8 +270,8 @@ def autosave_session_data():
     try:
         autosave_path = get_autosave_path()
         
-        # Only save if there's meaningful data (asset name is set)
-        if not st.session_state.asset_data.get('asset_name'):
+        # Only save if there's meaningful data (project no or asset name is set)
+        if not st.session_state.project_data.get('project_no') and not st.session_state.asset_data.get('asset_name'):
             return
         
         save_data = {
@@ -251,6 +281,9 @@ def autosave_session_data():
                 "authority": AUTHORITY_NAME,
                 "department": DEPARTMENT
             },
+            "project_information": st.session_state.project_data,
+            "assets": st.session_state.assets,
+            "current_asset_index": st.session_state.current_asset_index,
             "asset_information": st.session_state.asset_data,
             "operating_context": st.session_state.operating_context,
             "components": st.session_state.get('components', []),
@@ -278,14 +311,23 @@ def restore_session_data():
         if not os.path.exists(autosave_path):
             return False
         
-        # Only restore if current session is empty (asset name not set)
-        if st.session_state.asset_data.get('asset_name'):
+        # Only restore if current session is empty (project no and asset name not set)
+        if st.session_state.project_data.get('project_no') or st.session_state.asset_data.get('asset_name'):
             return False
         
         with open(autosave_path, 'r') as f:
             saved_data = json.load(f)
         
         # Load the saved data
+        if "project_information" in saved_data:
+            st.session_state.project_data = saved_data["project_information"]
+        
+        if "assets" in saved_data:
+            st.session_state.assets = saved_data["assets"]
+        
+        if "current_asset_index" in saved_data:
+            st.session_state.current_asset_index = saved_data["current_asset_index"]
+        
         if "asset_information" in saved_data:
             st.session_state.asset_data = saved_data["asset_information"]
         
@@ -324,6 +366,22 @@ def clear_autosave():
             os.remove(autosave_path)
     except Exception as e:
         print(f"Clear autosave error: {str(e)}")
+
+def save_asset_analysis_data():
+    """Save current analysis data back to the selected asset in the assets list"""
+    try:
+        if 'selected_analysis_asset' in st.session_state and st.session_state.selected_analysis_asset is not None:
+            asset_index = st.session_state.selected_analysis_asset
+            if 0 <= asset_index < len(st.session_state.assets):
+                st.session_state.assets[asset_index]['components'] = st.session_state.get('components', [])
+                st.session_state.assets[asset_index]['functions'] = st.session_state.get('functions', [])
+                st.session_state.assets[asset_index]['functional_failures'] = st.session_state.get('functional_failures', [])
+                st.session_state.assets[asset_index]['failure_modes'] = st.session_state.get('failure_modes', [])
+                st.session_state.assets[asset_index]['analysis_results'] = st.session_state.get('analysis_results', [])
+                st.session_state.assets[asset_index]['operating_context'] = st.session_state.get('operating_context', {})
+                autosave_session_data()
+    except Exception as e:
+        print(f"Error saving asset analysis data: {str(e)}")
 
 # Sidebar Navigation
 def sidebar_navigation():
@@ -451,7 +509,7 @@ sidebar_navigation()
 
 # Periodic autosave on every page render (as a safety net)
 # This ensures data is saved even if a save button was missed
-if st.session_state.asset_data.get('asset_name'):
+if st.session_state.project_data.get('project_no') or st.session_state.asset_data.get('asset_name'):
     autosave_session_data()
 
 # Main content area
@@ -808,7 +866,79 @@ def stage_1_planning():
     """Stage 1: Planning and Preparation"""
     st.markdown("## Stage 1: Planning and Preparation")
     st.markdown("")
-    st.markdown("**Objective:** Define the asset scope, gather information, and document the operating context.")
+    st.markdown("**Objective:** Define the project scope and manage assets for RCM analysis.")
+    
+    # Project Information Section
+    st.markdown("### 📁 Project Information")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        project_no = st.text_input(
+            "Project No.",
+            value=st.session_state.project_data.get('project_no', ''),
+            help="Unique project identifier (e.g., RCM-2024-001)"
+        )
+    
+    with col2:
+        project_description = st.text_input(
+            "Project Description",
+            value=st.session_state.project_data.get('project_description', ''),
+            help="Brief description of the RCM project"
+        )
+    
+    if st.button("💾 Save Project Information", type="primary"):
+        st.session_state.project_data = {
+            'project_no': project_no,
+            'project_description': project_description,
+            'created_date': st.session_state.project_data.get('created_date', datetime.now().isoformat()),
+            'last_modified': datetime.now().isoformat()
+        }
+        autosave_session_data()
+        st.success(f"✅ Project '{project_no}' saved!")
+    
+    if not st.session_state.project_data.get('project_no'):
+        st.warning("⚠️ Please enter Project No. and save project information before adding assets.")
+        return
+    
+    # Assets Management Section
+    st.markdown("---")
+    st.markdown(f"### 🏭 Assets in Project: {st.session_state.project_data.get('project_no', '')}")
+    
+    # Display existing assets
+    if st.session_state.assets:
+        st.markdown("**Existing Assets:**")
+        for idx, asset in enumerate(st.session_state.assets):
+            col_a, col_b, col_c, col_d = st.columns([3, 2, 1, 1])
+            with col_a:
+                st.write(f"**{idx + 1}.** {asset['asset_name']}")
+            with col_b:
+                st.write(f"_{asset['asset_class']}_")
+            with col_c:
+                if st.button("✏️ Edit", key=f"edit_asset_{idx}"):
+                    st.session_state.current_asset_index = idx
+                    st.rerun()
+            with col_d:
+                if st.button("🗑️ Del", key=f"del_asset_{idx}"):
+                    st.session_state.assets.pop(idx)
+                    if st.session_state.current_asset_index == idx:
+                        st.session_state.current_asset_index = None
+                    autosave_session_data()
+                    st.rerun()
+    else:
+        st.info("No assets added yet. Click 'Add New Asset' to begin.")
+    
+    # Add/Edit Asset Section
+    st.markdown("---")
+    
+    # Check if we're editing an existing asset
+    if st.session_state.current_asset_index is not None:
+        st.markdown(f"### ✏️ Edit Asset #{st.session_state.current_asset_index + 1}")
+        current_asset = st.session_state.assets[st.session_state.current_asset_index]
+    else:
+        st.markdown("### ➕ Add New Asset")
+        current_asset = {'asset_name': '', 'asset_class': 'Select...', 'asset_type': '', 
+                        'site_location': '', 'components': [], 'operating_context': {}}
     
     col1, col2 = st.columns(2)
     
@@ -817,157 +947,125 @@ def stage_1_planning():
         
         asset_name = st.text_input(
             "Asset Name/ID",
-            value=st.session_state.asset_data.get('asset_name', ''),
-            help="e.g., Tharbogang PS2 - Jockey Pump Assembly 1"
+            value=current_asset.get('asset_name', ''),
+            help="e.g., Tharbogang PS2 - Jockey Pump Assembly 1",
+            key="edit_asset_name" if st.session_state.current_asset_index is not None else "new_asset_name"
         )
+        
+        asset_classes = ["Select...", "Pump Station", "Water Treatment Plant", "Pipeline System", 
+                        "Storage Tank", "Distribution Network", "Control System", "Other"]
+        current_class = current_asset.get('asset_class', 'Select...')
+        try:
+            class_index = asset_classes.index(current_class)
+        except ValueError:
+            class_index = 0
         
         asset_class = st.selectbox(
             "Asset Class",
-            ["Select...", "Pump Station", "Water Treatment Plant", "Pipeline System", 
-             "Storage Tank", "Distribution Network", "Control System", "Other"],
-            index=0 if not st.session_state.asset_data.get('asset_class') else 
-                  ["Select...", "Pump Station", "Water Treatment Plant", "Pipeline System", 
-                   "Storage Tank", "Distribution Network", "Control System", "Other"].index(
-                      st.session_state.asset_data.get('asset_class', 'Select...'))
+            asset_classes,
+            index=class_index,
+            key="edit_asset_class" if st.session_state.current_asset_index is not None else "new_asset_class"
         )
         
         asset_type = st.text_input(
             "Asset Type/Sub-Class",
-            value=st.session_state.asset_data.get('asset_type', ''),
-            help="e.g., Centrifugal Pump Assembly, VFD Motor"
+            value=current_asset.get('asset_type', ''),
+            help="e.g., Centrifugal Pump Assembly, VFD Motor",
+            key="edit_asset_type" if st.session_state.current_asset_index is not None else "new_asset_type"
         )
         
         site_location = st.text_input(
             "Site Location",
-            value=st.session_state.asset_data.get('site_location', ''),
-            help="Physical location of the asset"
+            value=current_asset.get('site_location', ''),
+            help="Physical location of the asset",
+            key="edit_site_location" if st.session_state.current_asset_index is not None else "new_site_location"
         )
-        
-        if st.button("💾 Save Asset Information", type="primary"):
-            st.session_state.asset_data = {
-                'asset_name': asset_name,
-                'asset_class': asset_class,
-                'asset_type': asset_type,
-                'site_location': site_location
-            }
-            autosave_session_data()
-            st.success("✅ Asset information saved!")
     
     with col2:
         st.subheader("Components")
         st.markdown("Define the components of this asset:")
         
-        if 'components' not in st.session_state:
-            st.session_state.components = []
+        # Get current components
+        if 'temp_components' not in st.session_state or st.session_state.get('temp_asset_index') != st.session_state.current_asset_index:
+            st.session_state.temp_components = current_asset.get('components', []).copy()
+            st.session_state.temp_asset_index = st.session_state.current_asset_index
         
-        new_component = st.text_input("Add Component", key="new_component")
+        new_component = st.text_input("Add Component", key="temp_new_component")
         if st.button("➕ Add Component"):
-            if new_component and new_component not in st.session_state.components:
-                st.session_state.components.append(new_component)
-                autosave_session_data()
+            if new_component and new_component not in st.session_state.temp_components:
+                st.session_state.temp_components.append(new_component)
                 st.success(f"Added: {new_component}")
+                st.rerun()
         
-        if st.session_state.components:
+        if st.session_state.temp_components:
             st.markdown("**Current Components:**")
-            for i, comp in enumerate(st.session_state.components):
+            for i, comp in enumerate(st.session_state.temp_components):
                 col_a, col_b = st.columns([4, 1])
                 with col_a:
                     st.write(f"• {comp}")
                 with col_b:
-                    if st.button("🗑️", key=f"del_comp_{i}"):
-                        st.session_state.components.pop(i)
-                        autosave_session_data()
+                    if st.button("🗑️", key=f"del_temp_comp_{i}"):
+                        st.session_state.temp_components.pop(i)
                         st.rerun()
     
-    # Operating Context
-    st.markdown("---")
-    st.subheader("📝 Operating Context")
+    # Save or Update Asset Button
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.session_state.current_asset_index is not None:
+            if st.button("💾 Update Asset", type="primary", use_container_width=True):
+                if asset_name and asset_class != "Select...":
+                    st.session_state.assets[st.session_state.current_asset_index] = {
+                        'asset_name': asset_name,
+                        'asset_class': asset_class,
+                        'asset_type': asset_type,
+                        'site_location': site_location,
+                        'components': st.session_state.temp_components.copy(),
+                        'operating_context': current_asset.get('operating_context', {}),
+                        'functions': current_asset.get('functions', []),
+                        'functional_failures': current_asset.get('functional_failures', []),
+                        'failure_modes': current_asset.get('failure_modes', []),
+                        'analysis_results': current_asset.get('analysis_results', [])
+                    }
+                    st.session_state.current_asset_index = None
+                    st.session_state.temp_components = []
+                    autosave_session_data()
+                    st.success("✅ Asset updated!")
+                    st.rerun()
+                else:
+                    st.error("Please fill in Asset Name and Asset Class")
+        else:
+            if st.button("💾 Save New Asset", type="primary", use_container_width=True):
+                if asset_name and asset_class != "Select...":
+                    st.session_state.assets.append({
+                        'asset_name': asset_name,
+                        'asset_class': asset_class,
+                        'asset_type': asset_type,
+                        'site_location': site_location,
+                        'components': st.session_state.temp_components.copy(),
+                        'operating_context': {},
+                        'functions': [],
+                        'functional_failures': [],
+                        'failure_modes': [],
+                        'analysis_results': []
+                    })
+                    st.session_state.temp_components = []
+                    autosave_session_data()
+                    st.success(f"✅ Asset '{asset_name}' added to project!")
+                    st.rerun()
+                else:
+                    st.error("Please fill in Asset Name and Asset Class")
     
-    st.markdown("Document the circumstances in which this asset operates. This sets the scene for the entire analysis.")
+    with col2:
+        if st.session_state.current_asset_index is not None:
+            if st.button("❌ Cancel Edit", use_container_width=True):
+                st.session_state.current_asset_index = None
+                st.session_state.temp_components = []
+                st.rerun()
     
-    tab1, tab2, tab3 = st.tabs(["Basic Context", "Technical Details", "Environment & Standards"])
-    
-    with tab1:
-        col1, col2 = st.columns(2)
-        with col1:
-            redundancy = st.radio(
-                "Redundancy",
-                ["Stand-alone (no backup)", "Duty/Standby configuration", "N+1 configuration"],
-                help="Is there a backup for this asset?"
-            )
-            
-            utilization = st.text_area(
-                "Utilization and Loading",
-                help="Operating hours, load patterns, capacity utilization"
-            )
-        
-        with col2:
-            quality_standards = st.text_area(
-                "Quality Standards",
-                help="Product quality requirements, tolerances"
-            )
-            
-            seasonal_demands = st.text_area(
-                "Seasonal Demands",
-                help="Peak demand periods, seasonal variations"
-            )
-    
-    with tab2:
-        col1, col2 = st.columns(2)
-        with col1:
-            skills_availability = st.text_area(
-                "Skills Availability",
-                help="Available skills on-site, contractor requirements"
-            )
-            
-            spares_availability = st.text_area(
-                "Spares Availability",
-                help="On-site spares, lead times for ordering"
-            )
-        
-        with col2:
-            logistics = st.text_area(
-                "Logistics",
-                help="Equipment availability, off-site repair requirements"
-            )
-    
-    with tab3:
-        col1, col2 = st.columns(2)
-        with col1:
-            operating_environment = st.text_area(
-                "Operating Environment",
-                help="Indoor/outdoor, temperature, dust, weather exposure"
-            )
-            
-            safety_standards = st.text_area(
-                "Safety Standards",
-                help="Relevant safety regulations and standards"
-            )
-        
-        with col2:
-            environmental_standards = st.text_area(
-                "Environmental Standards",
-                help="Environmental regulations and compliance requirements"
-            )
-    
-    if st.button("💾 Save Operating Context", type="primary"):
-        st.session_state.operating_context = {
-            'redundancy': redundancy,
-            'utilization': utilization,
-            'quality_standards': quality_standards,
-            'seasonal_demands': seasonal_demands,
-            'skills_availability': skills_availability,
-            'spares_availability': spares_availability,
-            'logistics': logistics,
-            'operating_environment': operating_environment,
-            'safety_standards': safety_standards,
-            'environmental_standards': environmental_standards
-        }
-        autosave_session_data()
-        st.success("✅ Operating context saved!")
-    
-    if st.session_state.asset_data.get('asset_name'):
+    # Proceed to next stage
+    if st.session_state.assets:
         st.markdown("---")
+        st.success(f"✅ Project has {len(st.session_state.assets)} asset(s). You can proceed to Stage 2 for RCM analysis.")
         if st.button("➡️ Proceed to Stage 2: RCM Analysis", key="proceed_green", use_container_width=True):
             st.session_state.current_stage = 2
             st.rerun()
@@ -977,14 +1075,57 @@ def stage_2_analysis():
     """Stage 2: RCM Analysis"""
     st.markdown("## Stage 2: RCM Analysis (FMECA)")
     st.markdown("")
-    if not st.session_state.asset_data.get('asset_name'):
+    
+    # Check if project and assets exist
+    if not st.session_state.project_data.get('project_no'):
         st.warning("⚠️ Please complete Stage 1: Planning and Preparation first!")
         if st.button("← Go to Stage 1"):
             st.session_state.current_stage = 1
             st.rerun()
         return
     
-    st.markdown(f"**Analyzing Asset:** {st.session_state.asset_data['asset_name']}")
+    if not st.session_state.assets:
+        st.warning("⚠️ No assets found in this project. Please add assets in Stage 1.")
+        if st.button("← Go to Stage 1"):
+            st.session_state.current_stage = 1
+            st.rerun()
+        return
+    
+    # Asset Selection
+    st.markdown(f"### 📁 Project: {st.session_state.project_data['project_no']} - {st.session_state.project_data.get('project_description', '')}")
+    
+    asset_options = [f"{i+1}. {asset['asset_name']} ({asset['asset_class']})" 
+                     for i, asset in enumerate(st.session_state.assets)]
+    
+    # Initialize or get selected asset for analysis
+    if 'selected_analysis_asset' not in st.session_state:
+        st.session_state.selected_analysis_asset = 0
+    
+    selected_option = st.selectbox(
+        "Select Asset for Analysis",
+        options=range(len(asset_options)),
+        format_func=lambda x: asset_options[x],
+        index=st.session_state.selected_analysis_asset,
+        key="asset_selector_stage2"
+    )
+    
+    st.session_state.selected_analysis_asset = selected_option
+    current_asset = st.session_state.assets[selected_option]
+    
+    st.markdown(f"**Analyzing Asset:** {current_asset['asset_name']}")
+    
+    # Load asset-specific data into session for analysis
+    # This maintains compatibility with existing analysis code
+    if 'components' not in st.session_state or st.session_state.get('last_loaded_asset') != selected_option:
+        st.session_state.components = current_asset.get('components', [])
+        st.session_state.functions = current_asset.get('functions', [])
+        st.session_state.functional_failures = current_asset.get('functional_failures', [])
+        st.session_state.failure_modes = current_asset.get('failure_modes', [])
+        st.session_state.analysis_results = current_asset.get('analysis_results', [])
+        st.session_state.operating_context = current_asset.get('operating_context', {})
+        st.session_state.last_loaded_asset = selected_option
+    
+    st.markdown("---")
     
     # Analysis Steps Tabs
     analysis_tab = st.tabs([
@@ -1040,7 +1181,7 @@ def stage_2_analysis():
                     'full_statement': f"{function_verb} {function_object} {performance_std}".strip()
                 }
                 st.session_state.functions.append(function)
-                autosave_session_data()
+                save_asset_analysis_data()
                 st.success(f"✅ Function {function['id']} added!")
                 st.rerun()
         
@@ -1059,7 +1200,7 @@ def stage_2_analysis():
             if func_to_delete != "None" and st.button("🗑️ Delete Selected Function"):
                 func_id = int(func_to_delete.split(":")[0].split()[-1])
                 st.session_state.functions = [f for f in st.session_state.functions if f['id'] != func_id]
-                autosave_session_data()
+                save_asset_analysis_data()
                 st.success("Function deleted!")
                 st.rerun()
     
@@ -1100,7 +1241,7 @@ def stage_2_analysis():
                         'category': failure_category
                     }
                     st.session_state.functional_failures.append(failure)
-                    autosave_session_data()
+                    save_asset_analysis_data()
                     st.success(f"✅ Functional Failure {failure['id']} added!")
                     st.rerun()
             
@@ -1169,7 +1310,7 @@ def stage_2_analysis():
                         'category': failure_mode_category
                     }
                     st.session_state.failure_modes.append(mode)
-                    autosave_session_data()
+                    save_asset_analysis_data()
                     st.success(f"✅ Failure Mode {mode['id']} added!")
                     st.rerun()
             
@@ -1247,7 +1388,7 @@ def stage_2_analysis():
                             'repair_time': repair_time,
                             'downtime': downtime
                         }
-                        autosave_session_data()
+                        save_asset_analysis_data()
                         st.success(f"✅ Failure effects added to {mode_id}")
                         st.rerun()
     
@@ -1390,7 +1531,7 @@ def stage_2_analysis():
                                 'risk_score': risk_score,
                                 'risk_level': risk_level
                             }
-                        autosave_session_data()
+                        save_asset_analysis_data()
                         st.success(f"✅ Consequence category saved for {mode_id}")
                         st.rerun()
     
@@ -1561,7 +1702,7 @@ def stage_2_analysis():
                                     'cost': total_cost
                                 }
                                 st.session_state.analysis_results.append(result)
-                                autosave_session_data()
+                                save_asset_analysis_data()
                                 st.success(f"✅ Task saved for {mode_id}")
                                 st.rerun()
                     else:
@@ -1572,13 +1713,53 @@ def stage_3_implementation():
     """Stage 3: Implementation Planning"""
     st.markdown("## Stage 3: Implementation Planning")
     st.markdown("")
-    if not st.session_state.analysis_results:
-        st.warning("⚠️ No analysis results available. Please complete Stage 2 first.")
+    
+    # Check if project exists
+    if not st.session_state.project_data.get('project_no'):
+        st.warning("⚠️ Please complete Stage 1: Planning and Preparation first!")
+        if st.button("← Go to Stage 1"):
+            st.session_state.current_stage = 1
+            st.rerun()
+        return
+    
+    if not st.session_state.assets:
+        st.warning("⚠️ No assets found in this project.")
+        if st.button("← Go to Stage 1"):
+            st.session_state.current_stage = 1
+            st.rerun()
+        return
+    
+    # Asset Selection
+    st.markdown(f"### 📁 Project: {st.session_state.project_data['project_no']} - {st.session_state.project_data.get('project_description', '')}")
+    
+    asset_options = [f"{i+1}. {asset['asset_name']} ({asset['asset_class']})" 
+                     for i, asset in enumerate(st.session_state.assets)]
+    
+    if 'selected_implementation_asset' not in st.session_state:
+        st.session_state.selected_implementation_asset = 0
+    
+    selected_option = st.selectbox(
+        "Select Asset for Implementation Planning",
+        options=range(len(asset_options)),
+        format_func=lambda x: asset_options[x],
+        index=st.session_state.selected_implementation_asset,
+        key="asset_selector_stage3"
+    )
+    
+    st.session_state.selected_implementation_asset = selected_option
+    current_asset = st.session_state.assets[selected_option]
+    
+    # Load asset-specific data
+    analysis_results = current_asset.get('analysis_results', [])
+    
+    if not analysis_results:
+        st.warning(f"⚠️ No analysis results available for '{current_asset['asset_name']}'. Please complete Stage 2 first.")
         if st.button("← Go to Stage 2"):
             st.session_state.current_stage = 2
             st.rerun()
         return
     
+    st.markdown(f"**Planning for Asset:** {current_asset['asset_name']}")
     st.markdown("**Objective:** Plan implementation of the failure management tasks identified in the analysis.")
     
     tab1, tab2, tab3 = st.tabs(["Maintenance Schedule", "One-off Changes", "Implementation Checklist"])
@@ -1587,7 +1768,7 @@ def stage_3_implementation():
         st.subheader("Maintenance Schedule")
         
         # Filter for CBM, FTM, and FF tasks
-        maintenance_tasks = [r for r in st.session_state.analysis_results 
+        maintenance_tasks = [r for r in analysis_results 
                            if any(t in r['task_type'] for t in ['CBM', 'FTM', 'FF'])]
         
         if maintenance_tasks:
@@ -1618,7 +1799,7 @@ def stage_3_implementation():
     with tab2:
         st.subheader("One-off Changes (Redesign Tasks)")
         
-        redesign_tasks = [r for r in st.session_state.analysis_results if 'Redesign' in r['task_type']]
+        redesign_tasks = [r for r in analysis_results if 'Redesign' in r['task_type']]
         
         if redesign_tasks:
             for i, task in enumerate(redesign_tasks):
@@ -1667,27 +1848,113 @@ def stage_4_reports():
     """Stage 4: Reports and Export"""
     st.markdown("## Stage 4: Reports and Export")
     st.markdown("")
-    if not st.session_state.analysis_results:
-        st.warning("⚠️ No analysis results available.")
+    
+    # Check if project exists
+    if not st.session_state.project_data.get('project_no'):
+        st.warning("⚠️ Please complete Stage 1: Planning and Preparation first!")
+        if st.button("← Go to Stage 1"):
+            st.session_state.current_stage = 1
+            st.rerun()
         return
     
-    tab1, tab2, tab3 = st.tabs(["Summary Report", "Detailed Analysis", "Export Data"])
+    if not st.session_state.assets:
+        st.warning("⚠️ No assets found in this project.")
+        if st.button("← Go to Stage 1"):
+            st.session_state.current_stage = 1
+            st.rerun()
+        return
+    
+    # Project Information
+    st.markdown(f"### 📁 Project: {st.session_state.project_data['project_no']} - {st.session_state.project_data.get('project_description', '')}")
+    st.markdown(f"**Total Assets:** {len(st.session_state.assets)}")
+    
+    tab1, tab2, tab3 = st.tabs(["Project Summary", "Asset Reports", "Export Data"])
     
     with tab1:
-        st.subheader("RCM Analysis Summary Report")
+        st.subheader("Project-Level Summary Report")
+        
+        # Aggregate statistics across all assets
+        total_functions = 0
+        total_failures = 0
+        total_modes = 0
+        total_tasks = 0
+        total_cost = 0
+        
+        for asset in st.session_state.assets:
+            total_functions += len(asset.get('functions', []))
+            total_failures += len(asset.get('functional_failures', []))
+            total_modes += len(asset.get('failure_modes', []))
+            total_tasks += len(asset.get('analysis_results', []))
+            total_cost += sum([r.get('cost', 0) for r in asset.get('analysis_results', [])])
+        
+        st.markdown("### Overall Project Statistics")
+        col1, col2, col3, col4, col5 = st.columns(5)
+        with col1:
+            st.metric("Assets", len(st.session_state.assets))
+        with col2:
+            st.metric("Functions", total_functions)
+        with col3:
+            st.metric("Failure Modes", total_modes)
+        with col4:
+            st.metric("Tasks", total_tasks)
+        with col5:
+            st.metric("Annual Cost", f"${total_cost:,.0f}")
+        
+        # Asset summary table
+        st.markdown("---")
+        st.markdown("### Assets Overview")
+        
+        asset_summary = []
+        for asset in st.session_state.assets:
+            asset_cost = sum([r.get('cost', 0) for r in asset.get('analysis_results', [])])
+            asset_summary.append({
+                'Asset Name': asset['asset_name'],
+                'Class': asset['asset_class'],
+                'Components': len(asset.get('components', [])),
+                'Failure Modes': len(asset.get('failure_modes', [])),
+                'Tasks': len(asset.get('analysis_results', [])),
+                'Annual Cost ($)': asset_cost
+            })
+        
+        if asset_summary:
+            df_summary = pd.DataFrame(asset_summary)
+            st.dataframe(df_summary, use_container_width=True)
+    
+    with tab2:
+        st.subheader("Individual Asset Reports")
+        
+        # Asset selection
+        asset_options = [f"{i+1}. {asset['asset_name']} ({asset['asset_class']})" 
+                        for i, asset in enumerate(st.session_state.assets)]
+        
+        if 'selected_report_asset' not in st.session_state:
+            st.session_state.selected_report_asset = 0
+        
+        selected_option = st.selectbox(
+            "Select Asset for Detailed Report",
+            options=range(len(asset_options)),
+            format_func=lambda x: asset_options[x],
+            index=st.session_state.selected_report_asset,
+            key="asset_selector_stage4"
+        )
+        
+        st.session_state.selected_report_asset = selected_option
+        current_asset = st.session_state.assets[selected_option]
+        
+        st.markdown("---")
+        st.markdown(f"### Asset: {current_asset['asset_name']}")
         
         # Asset information
-        st.markdown("### Asset Information")
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.markdown(f"**Asset:** {st.session_state.asset_data.get('asset_name', 'N/A')}")
-            st.markdown(f"**Class:** {st.session_state.asset_data.get('asset_class', 'N/A')}")
+            st.markdown(f"**Class:** {current_asset.get('asset_class', 'N/A')}")
+            st.markdown(f"**Type:** {current_asset.get('asset_type', 'N/A')}")
         with col2:
-            st.markdown(f"**Type:** {st.session_state.asset_data.get('asset_type', 'N/A')}")
-            st.markdown(f"**Location:** {st.session_state.asset_data.get('site_location', 'N/A')}")
+            st.markdown(f"**Location:** {current_asset.get('site_location', 'N/A')}")
+            st.markdown(f"**Components:** {len(current_asset.get('components', []))}")
         with col3:
             st.markdown(f"**Analysis Date:** {datetime.now().strftime('%Y-%m-%d')}")
-            st.markdown(f"**Components:** {len(st.session_state.components)}")
+            st.markdown(f"**Failure Modes:** {len(current_asset.get('failure_modes', []))}")
         
         # Analysis statistics
         st.markdown("---")
@@ -1695,146 +1962,99 @@ def stage_4_reports():
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Functions", len(st.session_state.functions))
+            st.metric("Functions", len(current_asset.get('functions', [])))
         with col2:
-            st.metric("Functional Failures", len(st.session_state.functional_failures))
+            st.metric("Functional Failures", len(current_asset.get('functional_failures', [])))
         with col3:
-            st.metric("Failure Modes", len(st.session_state.failure_modes))
+            st.metric("Failure Modes", len(current_asset.get('failure_modes', [])))
         with col4:
-            st.metric("Management Tasks", len(st.session_state.analysis_results))
+            st.metric("Management Tasks", len(current_asset.get('analysis_results', [])))
         
-        # Consequence breakdown
-        st.markdown("---")
-        st.markdown("### Consequence Breakdown")
-        
-        consequence_counts = {}
-        for mode in st.session_state.failure_modes:
-            if 'consequence_category' in mode:
-                cat = mode['consequence_category']
-                consequence_counts[cat] = consequence_counts.get(cat, 0) + 1
-        
-        if consequence_counts:
-            col1, col2 = st.columns(2)
-            with col1:
-                for cat, count in consequence_counts.items():
-                    st.markdown(f"**{cat}:** {count}")
+        # Detailed FMECA table
+        if current_asset.get('failure_modes'):
+            st.markdown("---")
+            st.markdown("### Detailed FMECA Analysis")
             
-            with col2:
-                # Simple visualization
-                df_cons = pd.DataFrame(list(consequence_counts.items()), columns=['Category', 'Count'])
-                st.bar_chart(df_cons.set_index('Category'))
-        
-        # Task type breakdown
-        st.markdown("---")
-        st.markdown("### Task Type Breakdown")
-        
-        task_counts = {}
-        total_cost = 0
-        for result in st.session_state.analysis_results:
-            task_type = result['task_type'].split('-')[0].strip()
-            task_counts[task_type] = task_counts.get(task_type, 0) + 1
-            total_cost += result['cost']
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            for task, count in task_counts.items():
-                st.markdown(f"**{task}:** {count} tasks")
-        
-        with col2:
-            st.markdown(f"**Total Annual Cost:** ${total_cost:,.2f}")
-    
-    with tab2:
-        st.subheader("Detailed FMECA Analysis")
-        
-        # Complete analysis table
-        detailed_data = []
-        for mode in st.session_state.failure_modes:
-            row = {
-                'Failure Mode ID': mode['id'],
-                'Component': mode['component'],
-                'Failure Mode': mode['description'],
-                'Consequence Category': mode.get('consequence_category', 'Not categorized'),
-            }
+            detailed_data = []
+            for mode in current_asset['failure_modes']:
+                row = {
+                    'Failure Mode ID': mode['id'],
+                    'Component': mode['component'],
+                    'Failure Mode': mode['description'],
+                    'Consequence': mode.get('consequence_category', 'Not categorized'),
+                }
+                
+                if 'effects' in mode:
+                    row['Downtime (hrs)'] = mode['effects'].get('downtime', 0)
+                
+                if 'management_task' in mode:
+                    row['Task Type'] = mode['management_task']['task_type']
+                    row['Cost ($)'] = mode['management_task']['cost']
+                
+                detailed_data.append(row)
             
-            if 'effects' in mode:
-                row['Safety Impact'] = mode['effects'].get('safety_impact', 'None')
-                row['Operational Impact'] = mode['effects'].get('operational_impact', 'None')
-                row['Downtime (hrs)'] = mode['effects'].get('downtime', 0)
-            
-            if 'management_task' in mode:
-                row['Task Type'] = mode['management_task']['task_type']
-                row['Task Description'] = mode['management_task']['description']
-                row['Annual Cost ($)'] = mode['management_task']['cost']
-            
-            detailed_data.append(row)
-        
-        if detailed_data:
             df_detailed = pd.DataFrame(detailed_data)
             st.dataframe(df_detailed, use_container_width=True)
     
     with tab3:
-        st.subheader("Export Analysis Results")
+        st.subheader("Export Project Data")
         
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("#### Export to CSV")
+            st.markdown("#### Export Complete Project (JSON)")
             
-            if st.session_state.analysis_results:
-                df_export = pd.DataFrame(st.session_state.analysis_results)
-                csv = df_export.to_csv(index=False)
+            export_data = create_export_data()
+            if export_data:
+                json_str = json.dumps(export_data, indent=2)
                 
                 st.download_button(
-                    label="📥 Download Results as CSV",
-                    data=csv,
-                    file_name=f"rcm_analysis_{st.session_state.asset_data.get('asset_name', 'asset')}_{datetime.now().strftime('%Y%m%d')}.csv",
-                    mime="text/csv",
+                    label="📥 Download Complete Project",
+                    data=json_str,
+                    file_name=f"rcm_project_{st.session_state.project_data.get('project_no', 'project')}_{datetime.now().strftime('%Y%m%d')}.json",
+                    mime="application/json",
                     use_container_width=True
                 )
+                st.info(f"Includes all {len(st.session_state.assets)} assets and their analyses")
         
         with col2:
-            st.markdown("#### Export to JSON")
+            st.markdown("#### Export Single Asset (CSV)")
             
-            # Complete export including all data
-            export_data = {
-                'asset_information': st.session_state.asset_data,
-                'operating_context': st.session_state.operating_context,
-                'components': st.session_state.components,
-                'functions': st.session_state.functions,
-                'functional_failures': st.session_state.functional_failures,
-                'failure_modes': st.session_state.failure_modes,
-                'analysis_results': st.session_state.analysis_results,
-                'export_date': datetime.now().isoformat()
-            }
-            
-            json_str = json.dumps(export_data, indent=2)
-            
-            st.download_button(
-                label="📥 Download Complete Analysis as JSON",
-                data=json_str,
-                file_name=f"rcm_complete_{st.session_state.asset_data.get('asset_name', 'asset')}_{datetime.now().strftime('%Y%m%d')}.json",
-                mime="application/json",
-                use_container_width=True
-            )
+            if st.session_state.assets:
+                asset_for_csv = st.selectbox(
+                    "Select Asset to Export",
+                    options=range(len(st.session_state.assets)),
+                    format_func=lambda x: st.session_state.assets[x]['asset_name'],
+                    key="csv_export_selector"
+                )
+                
+                selected_asset = st.session_state.assets[asset_for_csv]
+                if selected_asset.get('analysis_results'):
+                    df_export = pd.DataFrame(selected_asset['analysis_results'])
+                    csv = df_export.to_csv(index=False)
+                    
+                    st.download_button(
+                        label=f"📥 Download {selected_asset['asset_name']}",
+                        data=csv,
+                        file_name=f"rcm_analysis_{selected_asset['asset_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+                else:
+                    st.info("No analysis results for this asset yet.")
         
         st.markdown("---")
-        st.markdown("#### Import Previous Analysis")
+        st.markdown("#### Import Project Data")
         
-        uploaded_file = st.file_uploader("Upload JSON analysis file", type=['json'])
+        uploaded_file = st.file_uploader("Upload JSON project file", type=['json'])
         if uploaded_file is not None:
             try:
                 imported_data = json.load(uploaded_file)
                 
-                if st.button("Import Analysis Data"):
-                    st.session_state.asset_data = imported_data.get('asset_information', {})
-                    st.session_state.operating_context = imported_data.get('operating_context', {})
-                    st.session_state.components = imported_data.get('components', [])
-                    st.session_state.functions = imported_data.get('functions', [])
-                    st.session_state.functional_failures = imported_data.get('functional_failures', [])
-                    st.session_state.failure_modes = imported_data.get('failure_modes', [])
-                    st.session_state.analysis_results = imported_data.get('analysis_results', [])
+                if st.button("📥 Import Project Data"):
+                    load_import_data(imported_data)
                     autosave_session_data()
-                    st.success("✅ Analysis data imported successfully!")
+                    st.success("✅ Project data imported successfully!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Error importing file: {e}")
