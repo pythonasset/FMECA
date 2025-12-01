@@ -156,6 +156,17 @@ def initialize_session_state():
     if 'current_asset_index' not in st.session_state:
         st.session_state.current_asset_index = None
     
+    # Component editing state
+    if 'editing_component' not in st.session_state:
+        st.session_state.editing_component = None
+    
+    # Functional failure editing/deleting state
+    if 'editing_functional_failure' not in st.session_state:
+        st.session_state.editing_functional_failure = False
+    
+    if 'deleting_functional_failure' not in st.session_state:
+        st.session_state.deleting_functional_failure = False
+    
     # Legacy compatibility - will be deprecated
     if 'asset_data' not in st.session_state:
         st.session_state.asset_data = {
@@ -917,16 +928,85 @@ def stage_1_planning():
             with col_c:
                 if st.button("✏️ Edit", key=f"edit_asset_{idx}"):
                     st.session_state.current_asset_index = idx
+                    st.session_state.editing_component = None  # Clear component editing
                     st.rerun()
             with col_d:
                 if st.button("🗑️ Del", key=f"del_asset_{idx}"):
-                    st.session_state.assets.pop(idx)
-                    if st.session_state.current_asset_index == idx:
-                        st.session_state.current_asset_index = None
-                    autosave_session_data()
-                    st.rerun()
+                    # Check if asset has components
+                    components = asset.get('components', [])
+                    if components:
+                        st.error(f"⚠️ Cannot delete asset. Please delete all {len(components)} component(s) first to avoid orphaned data.")
+                    else:
+                        st.session_state.assets.pop(idx)
+                        if st.session_state.current_asset_index == idx:
+                            st.session_state.current_asset_index = None
+                        autosave_session_data()
+                        st.rerun()
+            
+            # Display components under each asset with Edit/Delete buttons
+            components = asset.get('components', [])
+            if components:
+                st.markdown(f"   **Components ({len(components)}):**")
+                for comp_idx, comp in enumerate(components):
+                    col_comp_a, col_comp_b, col_comp_c, col_comp_d = st.columns([3, 2, 1, 1])
+                    with col_comp_a:
+                        st.write(f"      • {comp}")
+                    with col_comp_b:
+                        st.write("")  # Empty to maintain alignment
+                    with col_comp_c:
+                        if st.button("✏️ Edit", key=f"edit_comp_{idx}_{comp_idx}"):
+                            st.session_state.editing_component = {
+                                'asset_idx': idx,
+                                'comp_idx': comp_idx,
+                                'comp_name': comp
+                            }
+                            st.session_state.current_asset_index = None  # Clear asset editing
+                            st.rerun()
+                    with col_comp_d:
+                        if st.button("🗑️ Del", key=f"del_comp_{idx}_{comp_idx}"):
+                            st.session_state.assets[idx]['components'].pop(comp_idx)
+                            autosave_session_data()
+                            st.success(f"✅ Component '{comp}' deleted!")
+                            st.rerun()
+            else:
+                st.markdown(f"   _No components defined_")
+            
+            # Add horizontal divider after each asset
+            st.markdown("---")
     else:
         st.info("No assets added yet. Click 'Add New Asset' to begin.")
+    
+    # Component Editing Section
+    if 'editing_component' in st.session_state and st.session_state.editing_component:
+        st.markdown("---")
+        st.markdown("### ✏️ Edit Component")
+        
+        edit_info = st.session_state.editing_component
+        asset_idx = edit_info['asset_idx']
+        comp_idx = edit_info['comp_idx']
+        comp_name = edit_info['comp_name']
+        
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            new_comp_name = st.text_input(
+                "Component Name",
+                value=comp_name,
+                key="editing_comp_name"
+            )
+        with col2:
+            if st.button("💾 Save", type="primary", use_container_width=True):
+                if new_comp_name and new_comp_name.strip():
+                    st.session_state.assets[asset_idx]['components'][comp_idx] = new_comp_name.strip()
+                    autosave_session_data()
+                    st.session_state.editing_component = None
+                    st.success(f"✅ Component updated!")
+                    st.rerun()
+                else:
+                    st.error("Component name cannot be empty")
+        with col3:
+            if st.button("❌ Cancel", use_container_width=True):
+                st.session_state.editing_component = None
+                st.rerun()
     
     # Add/Edit Asset Section
     st.markdown("---")
@@ -1028,6 +1108,7 @@ def stage_1_planning():
                     }
                     st.session_state.current_asset_index = None
                     st.session_state.temp_components = []
+                    st.session_state.editing_component = None
                     autosave_session_data()
                     st.success("✅ Asset updated!")
                     st.rerun()
@@ -1049,6 +1130,7 @@ def stage_1_planning():
                         'analysis_results': []
                     })
                     st.session_state.temp_components = []
+                    st.session_state.editing_component = None
                     autosave_session_data()
                     st.success(f"✅ Asset '{asset_name}' added to project!")
                     st.rerun()
@@ -1060,6 +1142,7 @@ def stage_1_planning():
             if st.button("❌ Cancel Edit", use_container_width=True):
                 st.session_state.current_asset_index = None
                 st.session_state.temp_components = []
+                st.session_state.editing_component = None
                 st.rerun()
     
     # Proceed to next stage
@@ -1223,7 +1306,8 @@ def stage_2_analysis():
             
             failure_description = st.text_area(
                 "Describe the Functional Failure",
-                help="How does the asset fail to meet this function?"
+                help="How does the asset fail to meet this function?",
+                key="ff_description_input"
             )
             
             failure_category = st.radio(
@@ -1231,19 +1315,125 @@ def stage_2_analysis():
                 ["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"]
             )
             
-            if st.button("➕ Add Functional Failure"):
-                if failure_description:
-                    failure = {
-                        'id': f"FF-{func_id}.{len([f for f in st.session_state.functional_failures if f['function_id'] == func_id]) + 1}",
-                        'function_id': func_id,
-                        'function_statement': next(f['full_statement'] for f in st.session_state.functions if f['id'] == func_id),
-                        'description': failure_description,
-                        'category': failure_category
-                    }
-                    st.session_state.functional_failures.append(failure)
-                    save_asset_analysis_data()
-                    st.success(f"✅ Functional Failure {failure['id']} added!")
+            # Action buttons row
+            col_btn1, col_btn2, col_btn3 = st.columns(3)
+            
+            with col_btn1:
+                if st.button("➕ Add Functional Failure", use_container_width=True):
+                    if failure_description:
+                        failure = {
+                            'id': f"FF-{func_id}.{len([f for f in st.session_state.functional_failures if f['function_id'] == func_id]) + 1}",
+                            'function_id': func_id,
+                            'function_statement': next(f['full_statement'] for f in st.session_state.functions if f['id'] == func_id),
+                            'description': failure_description,
+                            'category': failure_category
+                        }
+                        st.session_state.functional_failures.append(failure)
+                        # Clear the text box after adding
+                        st.session_state.ff_description_input = ''
+                        save_asset_analysis_data()
+                        st.success(f"✅ Functional Failure {failure['id']} added!")
+                        st.rerun()
+            
+            with col_btn2:
+                if st.button("✏️ Update Functional Failure", 
+                           disabled=not st.session_state.functional_failures,
+                           use_container_width=True):
+                    st.session_state.editing_functional_failure = True
                     st.rerun()
+            
+            with col_btn3:
+                if st.button("🗑️ Delete Functional Failure", 
+                           disabled=not st.session_state.functional_failures,
+                           use_container_width=True):
+                    st.session_state.deleting_functional_failure = True
+                    st.rerun()
+            
+            # Update Functional Failure Section
+            if st.session_state.get('editing_functional_failure', False) and st.session_state.functional_failures:
+                st.markdown("---")
+                st.markdown("### ✏️ Update Functional Failure")
+                
+                failure_options = [f"{f['id']}: {f['description']}" for f in st.session_state.functional_failures]
+                selected_failure_to_update = st.selectbox(
+                    "Select Functional Failure to Update",
+                    failure_options,
+                    key="update_ff_select"
+                )
+                
+                failure_idx = failure_options.index(selected_failure_to_update)
+                current_failure = st.session_state.functional_failures[failure_idx]
+                
+                updated_description = st.text_area(
+                    "Update Description",
+                    value=current_failure['description'],
+                    key="update_ff_desc"
+                )
+                
+                updated_category = st.radio(
+                    "Update Category",
+                    ["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"],
+                    index=["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"].index(current_failure['category']),
+                    key="update_ff_cat"
+                )
+                
+                col_update1, col_update2 = st.columns(2)
+                with col_update1:
+                    if st.button("💾 Save Update", type="primary", use_container_width=True):
+                        if updated_description:
+                            st.session_state.functional_failures[failure_idx]['description'] = updated_description
+                            st.session_state.functional_failures[failure_idx]['category'] = updated_category
+                            st.session_state.editing_functional_failure = False
+                            save_asset_analysis_data()
+                            st.success(f"✅ Functional Failure {current_failure['id']} updated!")
+                            st.rerun()
+                        else:
+                            st.error("Description cannot be empty")
+                with col_update2:
+                    if st.button("❌ Cancel Update", use_container_width=True):
+                        st.session_state.editing_functional_failure = False
+                        st.rerun()
+            
+            # Delete Functional Failure Section
+            if st.session_state.get('deleting_functional_failure', False) and st.session_state.functional_failures:
+                st.markdown("---")
+                st.markdown("### 🗑️ Delete Functional Failure")
+                st.warning("⚠️ Warning: Deleting a functional failure will also delete all associated failure modes!")
+                
+                failure_options = [f"{f['id']}: {f['description']}" for f in st.session_state.functional_failures]
+                selected_failure_to_delete = st.selectbox(
+                    "Select Functional Failure to Delete",
+                    failure_options,
+                    key="delete_ff_select"
+                )
+                
+                failure_idx = failure_options.index(selected_failure_to_delete)
+                failure_to_delete = st.session_state.functional_failures[failure_idx]
+                
+                # Count associated failure modes
+                associated_modes = [fm for fm in st.session_state.failure_modes if fm.get('failure_id') == failure_to_delete['id']]
+                
+                if associated_modes:
+                    st.info(f"ℹ️ This will delete {len(associated_modes)} associated failure mode(s)")
+                
+                col_del1, col_del2 = st.columns(2)
+                with col_del1:
+                    if st.button("🗑️ Confirm Delete", type="primary", use_container_width=True):
+                        # Delete associated failure modes
+                        st.session_state.failure_modes = [fm for fm in st.session_state.failure_modes 
+                                                          if fm.get('failure_id') != failure_to_delete['id']]
+                        # Delete the functional failure
+                        st.session_state.functional_failures.pop(failure_idx)
+                        st.session_state.deleting_functional_failure = False
+                        # Clear the functional failure text box
+                        st.session_state.ff_description_input = ''
+                        save_asset_analysis_data()
+                        st.success(f"✅ Functional Failure {failure_to_delete['id']} deleted!")
+                        st.rerun()
+                with col_del2:
+                    if st.button("❌ Cancel Delete", use_container_width=True):
+                        st.session_state.deleting_functional_failure = False
+                        st.rerun()
             
             if st.session_state.functional_failures:
                 st.markdown("---")
