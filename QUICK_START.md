@@ -20,7 +20,7 @@ pip install -r requirements.txt
 streamlit run rcm_fmeca_app.py
 ```
 
-The application will open automatically in your browser at `http://localhost:8501`
+The application will open automatically in your browser at `http://localhost:8502`
 
 ### Step 3: Try the Example (Optional)
 
@@ -73,22 +73,34 @@ The application will open automatically in your browser at `http://localhost:850
 #### Step 3-4: Failures & Modes (5 min)
 
 1. For each function, identify how it can fail
+   - Functional failures are automatically filtered by the selected function
 2. For each failure, identify specific component causes
+   - Component dropdown is populated from Step 1 for the selected asset
 3. Example:
    - Failure: "Unable to pump water"
    - Mode: "Bearing seized due to lack of lubrication"
+4. View/Update/Delete:
+   - Select any row from the table to view details
+   - Click "Update Selected" or "Delete Selected" buttons
 
 #### Step 5: Effects (5 min)
 
 1. Describe what happens when failure occurs
 2. Include: evidence, safety, operational impacts, downtime
 3. Think worst-case scenario
+4. View/Update/Delete:
+   - Browse all effects in a comprehensive table with horizontal scrolling
+   - Select any row to update or delete effect details
 
 #### Step 6: Consequences (3 min)
 
 1. Answer if failure is evident or hidden
 2. Categorize based on impact
 3. System will guide you through decision logic
+4. Risk assessment automatically calculated for safety/environmental consequences
+5. View/Update/Delete:
+   - Review all consequence categories in a table
+   - Select any row to update or delete categorization
 
 #### Step 7: Task Selection (2 min)
 
@@ -130,6 +142,7 @@ The application will open automatically in your browser at `http://localhost:850
 ✅ **Start Small**: Begin with 1-2 critical functions per asset
 ✅ **Be Specific**: Use measurable performance standards
 ✅ **Focus on Real Failures**: Only analyze likely failure modes
+✅ **Table-Based UI**: Use radio button selection to easily view/update/delete any analysis item
 ✅ **Save Often**: Export project as JSON regularly
 ✅ **Consistent Approach**: Apply same rigor across all assets
 

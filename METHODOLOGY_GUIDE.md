@@ -5,26 +5,33 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     STAGE 1: PLANNING                           │
-│  • Create Project (Project No. + Description)                  │
-│  • Add Multiple Assets to Project                              │
-│  • Define Components per Asset                                 │
-│  • Document Operating Context per Asset                        │
+│  • Create Project (Project No. + Description)                   │
+│  • Add Multiple Assets to Project                               │
+│  • Define Components per Asset                                  │
+│  • Document Operating Context per Asset                         │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              STAGE 2: RCM ANALYSIS (FMECA)                      │
 │              [Select Asset from Project]                        │
-│                                                                  │
+│                                                                 │
 │  Step 2: Functions        → What should it do?                  │
-│  Step 3: Functional      → How can it fail to do that?         │
-│          Failures                                               │
-│  Step 4: Failure Modes   → What causes each failure?           │
-│  Step 5: Failure Effects → What happens when it fails?         │
-│  Step 6: Consequences    → How significant is the failure?     │
-│  Step 7: Task Selection  → How can we manage the failure?      │
-│                                                                  │
-│  [Repeat for each asset in project]                            │
+│  Step 3: Functional      → How can it fail to do that?          │
+│          Failures         [Filtered by selected function]       │
+│                          [Table-based view/update/delete]       │
+│  Step 4: Failure Modes   → What causes each failure?            │
+│                          [Component dropdown from asset]        │
+│                          [Table-based view/update/delete]       │
+│  Step 5: Failure Effects → What happens when it fails?          │
+│                          [Comprehensive table with scrolling]   │
+│                          [Table-based view/update/delete]       │
+│  Step 6: Consequences    → How significant is the failure?      │
+│                          [Risk assessment for safety]           │
+│                          [Table-based view/update/delete]       │
+│  Step 7: Task Selection  → How can we manage the failure?       │
+│                                                                 │
+│  [Repeat for each asset in project]                             │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
@@ -32,7 +39,7 @@
 │                  STAGE 3: IMPLEMENTATION                        │
 │              [Select Asset from Project]                        │
 │  • Develop Maintenance Schedules per Asset                      │
-│  • Plan One-off Changes (Redesign)                             │
+│  • Plan One-off Changes (Redesign)                              │
 │  • Assign Resources                                             │
 │  • Update Procedures                                            │
 └────────────────────────┬────────────────────────────────────────┘
@@ -40,9 +47,9 @@
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              STAGE 4: REPORTS & EXPORT                          │
-│  • Project-Level Summary (All Assets)                          │
-│  • Asset-Level Detailed Reports                                │
-│  • Export Complete Project or Individual Assets                │
+│  • Project-Level Summary (All Assets)                           │
+│  • Asset-Level Detailed Reports                                 │
+│  • Export Complete Project or Individual Assets                 │
 │  • Monitor Performance Across Project                           │
 │  • Review & Update Analysis                                     │
 └─────────────────────────────────────────────────────────────────┘
@@ -296,6 +303,38 @@ Risk Score = Consequence + Likelihood
 - Consider operating conditions
 - Start conservative, refine with data
 
+## User Interface Tips
+
+### Table-Based Data Management (Steps 3-6)
+
+The application uses a consistent pattern for managing analysis data:
+
+1. **Add New Items**: Fill in form fields and click "Add" button
+2. **View All Items**: Browse comprehensive tables with all entries
+3. **Select for Action**: Use radio buttons to select a specific row
+4. **Update or Delete**: Click "Update Selected" or "Delete Selected" buttons
+5. **Save Changes**: Confirm updates or deletions with dedicated buttons
+
+**Benefits:**
+- Easy navigation through large datasets
+- Clear view of all entries before taking action
+- Reduced risk of accidental modifications
+- Consistent interaction pattern across all analysis steps
+
+### Function-Specific Filtering (Step 3)
+
+Functional failures are automatically filtered to show only those related to the currently selected function. This helps:
+- Focus on relevant failures
+- Avoid confusion with failures from other functions
+- Maintain clarity in complex multi-function assets
+
+### Dynamic Component Lists (Step 4)
+
+The component dropdown in Step 4 automatically reflects components defined in Step 1 for the selected asset. Ensures:
+- Consistency across analysis steps
+- Prevention of orphaned failure modes
+- Accurate asset-specific data
+
 ## Common Pitfalls to Avoid
 
 ❌ **Don't:**
@@ -305,6 +344,7 @@ Risk Score = Consequence + Likelihood
 - Describe effects assuming current maintenance (describe worst case)
 - Skip consequence categorization (leads to poor task selection)
 - Implement tasks without feasibility/worth doing analysis
+- Delete entries without reviewing table first
 
 ✅ **Do:**
 
@@ -313,6 +353,8 @@ Risk Score = Consequence + Likelihood
 - Consider operating context throughout
 - Document assumptions clearly
 - Review and update regularly
+- Use table views to review all data before making changes
+- Take advantage of filtering to focus on specific functions
 
 ## Success Metrics
 

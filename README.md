@@ -24,6 +24,7 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - **FMECA Analysis**: Complete failure modes, effects, and criticality analysis
 - **Consequence Categorization**: 6-category system (Hidden/Evident × Safety/Operational/Non-operational)
 - **Task Selection**: Intelligent selection of maintenance strategies (CBM, FTM, FF, Redesign, OTF)
+- **Interactive Data Management**: Table-based selection for viewing, updating, and deleting analysis data
 
 ### Key Capabilities
 - ✅ **Project-based organization** with unique project numbers
@@ -31,7 +32,7 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - ✅ Asset and component definition with hierarchical structure
 - ✅ Operating context documentation
 - ✅ Function identification with performance standards
-- ✅ Functional failure analysis
+- ✅ Functional failure analysis with function-specific filtering
 - ✅ Failure mode identification at component level
 - ✅ Detailed failure effects documentation
 - ✅ Risk-based consequence assessment
@@ -40,6 +41,7 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - ✅ Implementation planning per asset
 - ✅ **Project-level and asset-level reporting**
 - ✅ Import/export for data persistence
+- ✅ **Table-based UI** for easy viewing, updating, and deleting of analysis data
 
 ## Installation
 
@@ -108,15 +110,19 @@ Define what the asset is supposed to do:
 
 #### Step 3: Identify Functional Failures
 How can the asset fail to meet its functions?
+- **Filtered by Function**: View functional failures specific to the selected function
 - Complete loss: "Unable to pump any water"
 - Partial loss: "Pumps water at less than 250 L/s"
 - Exceeds limits: "Pressure exceeds 1,200 kPa"
+- **Table-based Management**: View all functional failures in a table, select any row to update or delete
 
 #### Step 4: Identify Failure Modes
 What specifically causes each functional failure?
+- **Component Dropdown**: Automatically populated with components defined for the selected asset in Step 1
 - Identify at component level
 - Include cause: "Pump bearing seized due to lack of lubrication"
 - Categories: Deterioration, lubrication, contamination, disassembly, human error, overloading
+- **Table-based Management**: View all failure modes in a table, select any row to update or delete
 
 #### Step 5: Identify Failure Effects
 What happens when each failure occurs?
@@ -125,6 +131,8 @@ What happens when each failure occurs?
 - Operational impacts
 - Physical damage
 - Repair requirements and downtime
+- **Comprehensive Table View**: See all failure effects with horizontal scrolling for complete data visibility
+- **Table-based Management**: View all failure effects in a table, select any row to update or delete
 
 #### Step 6: Categorize Consequences
 Determine the significance of each failure:
@@ -133,6 +141,8 @@ Determine the significance of each failure:
 - **Safety/Environmental**: Can hurt people or breach environmental standards
 - **Operational**: Affects output, quality, or service
 - **Non-operational**: Only direct repair costs
+- **Table-based Management**: View all consequence categories in a table, select any row to update or delete
+- **Risk Assessment**: Automatic risk level calculation for safety/environmental consequences
 
 #### Step 7: Select Failure Management Tasks
 Choose appropriate maintenance strategy:

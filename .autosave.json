@@ -13,14 +13,15 @@
   },
   "assets": [
     {
-      "asset_name": "Pump No. 1",
+      "asset_name": "Pump Set No. 1",
       "asset_class": "Pump Station",
       "asset_type": "Pumps",
       "site_location": "Mangadang WPS",
       "components": [
         "VSD Pump 1",
         "Motor Pump 1",
-        "Motor Control Center Pump 1"
+        "Motor Control Center Pump 1",
+        "Pump 1"
       ],
       "operating_context": {},
       "functions": [
@@ -31,6 +32,14 @@
           "object": "water supply",
           "performance_standard": "at 300 L/s",
           "full_statement": "To pump water through irrigation system to clients water supply at 300 L/s"
+        },
+        {
+          "id": 2,
+          "type": "Control/Containment/Comfort",
+          "verb": "To contain water and ",
+          "object": "pump",
+          "performance_standard": "not leak not more than 1 litre per hour",
+          "full_statement": "To contain water and  pump not leak not more than 1 litre per hour"
         }
       ],
       "functional_failures": [
@@ -38,18 +47,80 @@
           "id": "FF-1.1",
           "function_id": 1,
           "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
-          "description": "Power outage  leading to catastrophic pump failure.",
-          "category": "Complete loss of function"
+          "description": "Pumps < 300 L/s flow rate",
+          "category": "Partial loss of function"
+        },
+        {
+          "id": "FF-2.1",
+          "function_id": 2,
+          "function_statement": "To contain water and  pump not leak not more than 1 litre per hour",
+          "description": "Fails to contain water < 1 litre per hour",
+          "category": "Partial loss of function"
         },
         {
           "id": "FF-1.2",
           "function_id": 1,
           "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
-          "description": "Fire in motor control system, Pump 1 isolated.",
+          "description": "Pumps < 800 kPa",
           "category": "Partial loss of function"
         }
       ],
-      "failure_modes": [],
+      "failure_modes": [
+        {
+          "id": "FM-FF-1.1-1",
+          "functional_failure_id": "FF-1.1",
+          "component": "Pump 1",
+          "description": "Blockage due to debris",
+          "category": "Other",
+          "effects": {
+            "evidence": "Low Flow observed",
+            "safety_impact": "No safety impact",
+            "operational_impact": "Customer demand not met",
+            "physical_damage": "NIL",
+            "repair_action": "Clear and remove blockage",
+            "repair_time": 4.0,
+            "downtime": 8.0
+          },
+          "consequence_category": "Evident (Operational)"
+        },
+        {
+          "id": "FM-FF-1.1-2",
+          "functional_failure_id": "FF-1.1",
+          "component": "Pump 1",
+          "description": "Worn bearings due to normal wear",
+          "category": "Deterioration (wear, corrosion, fatigue)",
+          "effects": {
+            "evidence": "Motor and Pump stop resulting in zero flow.",
+            "safety_impact": "Potential safety hazard due to disintegration of components.",
+            "operational_impact": "Customer demand not met.",
+            "physical_damage": "Motor, coupling and pump destroyed",
+            "repair_action": "Replace motor coupling and pump.",
+            "repair_time": 8.0,
+            "downtime": 72.0
+          },
+          "consequence_category": "Evident (Safety/Environmental)",
+          "risk_assessment": {
+            "consequence": "5-Catastrophic",
+            "likelihood": "3-Occasional",
+            "risk_score": 8,
+            "risk_level": "High"
+          }
+        },
+        {
+          "id": "FM-FF-1.2-1",
+          "functional_failure_id": "FF-1.2",
+          "component": "Motor Pump 1",
+          "description": "Worn bearings due to normal wear",
+          "category": "Deterioration (wear, corrosion, fatigue)"
+        },
+        {
+          "id": "FM-FF-1.2-2",
+          "functional_failure_id": "FF-1.2",
+          "component": "Motor Pump 1",
+          "description": "Degradation of winding insulation",
+          "category": "Deterioration (wear, corrosion, fatigue)"
+        }
+      ],
       "analysis_results": []
     },
     {
@@ -92,7 +163,8 @@
   "components": [
     "VSD Pump 1",
     "Motor Pump 1",
-    "Motor Control Center Pump 1"
+    "Motor Control Center Pump 1",
+    "Pump 1"
   ],
   "functions": [
     {
@@ -102,6 +174,14 @@
       "object": "water supply",
       "performance_standard": "at 300 L/s",
       "full_statement": "To pump water through irrigation system to clients water supply at 300 L/s"
+    },
+    {
+      "id": 2,
+      "type": "Control/Containment/Comfort",
+      "verb": "To contain water and ",
+      "object": "pump",
+      "performance_standard": "not leak not more than 1 litre per hour",
+      "full_statement": "To contain water and  pump not leak not more than 1 litre per hour"
     }
   ],
   "functional_failures": [
@@ -109,19 +189,81 @@
       "id": "FF-1.1",
       "function_id": 1,
       "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
-      "description": "Power outage  leading to catastrophic pump failure.",
-      "category": "Complete loss of function"
+      "description": "Pumps < 300 L/s flow rate",
+      "category": "Partial loss of function"
+    },
+    {
+      "id": "FF-2.1",
+      "function_id": 2,
+      "function_statement": "To contain water and  pump not leak not more than 1 litre per hour",
+      "description": "Fails to contain water < 1 litre per hour",
+      "category": "Partial loss of function"
     },
     {
       "id": "FF-1.2",
       "function_id": 1,
       "function_statement": "To pump water through irrigation system to clients water supply at 300 L/s",
-      "description": "Fire in motor control system, Pump 1 isolated.",
+      "description": "Pumps < 800 kPa",
       "category": "Partial loss of function"
     }
   ],
-  "failure_modes": [],
+  "failure_modes": [
+    {
+      "id": "FM-FF-1.1-1",
+      "functional_failure_id": "FF-1.1",
+      "component": "Pump 1",
+      "description": "Blockage due to debris",
+      "category": "Other",
+      "effects": {
+        "evidence": "Low Flow observed",
+        "safety_impact": "No safety impact",
+        "operational_impact": "Customer demand not met",
+        "physical_damage": "NIL",
+        "repair_action": "Clear and remove blockage",
+        "repair_time": 4.0,
+        "downtime": 8.0
+      },
+      "consequence_category": "Evident (Operational)"
+    },
+    {
+      "id": "FM-FF-1.1-2",
+      "functional_failure_id": "FF-1.1",
+      "component": "Pump 1",
+      "description": "Worn bearings due to normal wear",
+      "category": "Deterioration (wear, corrosion, fatigue)",
+      "effects": {
+        "evidence": "Motor and Pump stop resulting in zero flow.",
+        "safety_impact": "Potential safety hazard due to disintegration of components.",
+        "operational_impact": "Customer demand not met.",
+        "physical_damage": "Motor, coupling and pump destroyed",
+        "repair_action": "Replace motor coupling and pump.",
+        "repair_time": 8.0,
+        "downtime": 72.0
+      },
+      "consequence_category": "Evident (Safety/Environmental)",
+      "risk_assessment": {
+        "consequence": "5-Catastrophic",
+        "likelihood": "3-Occasional",
+        "risk_score": 8,
+        "risk_level": "High"
+      }
+    },
+    {
+      "id": "FM-FF-1.2-1",
+      "functional_failure_id": "FF-1.2",
+      "component": "Motor Pump 1",
+      "description": "Worn bearings due to normal wear",
+      "category": "Deterioration (wear, corrosion, fatigue)"
+    },
+    {
+      "id": "FM-FF-1.2-2",
+      "functional_failure_id": "FF-1.2",
+      "component": "Motor Pump 1",
+      "description": "Degradation of winding insulation",
+      "category": "Deterioration (wear, corrosion, fatigue)"
+    }
+  ],
   "analysis_results": [],
   "current_stage": 2,
-  "autosave_date": "2025-12-01T17:58:00.966796"
+  "autosave_date": "2025-12-02T12:15:56.432153"
 }

@@ -427,39 +427,6 @@ def sidebar_navigation():
         st.session_state.current_view = 'future'
         st.rerun()
     
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📚 Quick Reference")
-    
-    with st.sidebar.expander("7 RCM Questions"):
-        st.markdown("""
-        1. What are the functions?
-        2. In what ways can it fail?
-        3. What causes each failure?
-        4. What happens when it fails?
-        5. In what way does failure matter?
-        6. What can prevent/predict failure?
-        7. What if no preventive task?
-        """)
-    
-    with st.sidebar.expander("Consequence Categories"):
-        st.markdown("""
-        - **Hidden (Safety/Environmental)**
-        - **Hidden (Operational)**
-        - **Hidden (Non-operational)**
-        - **Evident (Safety/Environmental)**
-        - **Evident (Operational)**
-        - **Evident (Non-operational)**
-        """)
-    
-    with st.sidebar.expander("Task Types"):
-        st.markdown("""
-        - **CBM**: Condition Based Maintenance
-        - **FTM**: Fixed Time Maintenance
-        - **FF**: Failure Finding
-        - **Redesign**: One-off change
-        - **OTF**: Operate to Failure
-        """)
-    
     # Import/Export Section
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📁 Data Management")
@@ -504,6 +471,39 @@ def sidebar_navigation():
     if st.sidebar.button("🗑️ Clear Autosave", use_container_width=True, help="Clear automatically saved session data"):
         clear_autosave()
         st.sidebar.success("✅ Autosave cleared!")
+    
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 📚 Quick Reference")
+    
+    with st.sidebar.expander("7 RCM Questions"):
+        st.markdown("""
+        1. What are the functions?
+        2. In what ways can it fail?
+        3. What causes each failure?
+        4. What happens when it fails?
+        5. In what way does failure matter?
+        6. What can prevent/predict failure?
+        7. What if no preventive task?
+        """)
+    
+    with st.sidebar.expander("Consequence Categories"):
+        st.markdown("""
+        - **Hidden (Safety/Environmental)**
+        - **Hidden (Operational)**
+        - **Hidden (Non-operational)**
+        - **Evident (Safety/Environmental)**
+        - **Evident (Operational)**
+        - **Evident (Non-operational)**
+        """)
+    
+    with st.sidebar.expander("Task Types"):
+        st.markdown("""
+        - **CBM**: Condition Based Maintenance
+        - **FTM**: Fixed Time Maintenance
+        - **FF**: Failure Finding
+        - **Redesign**: One-off change
+        - **OTF**: Operate to Failure
+        """)
     
     # Application Information
     st.sidebar.markdown("---")
@@ -1304,6 +1304,9 @@ def stage_2_analysis():
             
             func_id = int(selected_function.split(":")[0].split()[-1])
             
+            # Filter failures for selected function
+            function_failures = [f for f in st.session_state.functional_failures if f['function_id'] == func_id]
+            
             failure_description = st.text_area(
                 "Describe the Functional Failure",
                 help="How does the asset fail to meet this function?",
@@ -1315,131 +1318,120 @@ def stage_2_analysis():
                 ["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"]
             )
             
-            # Action buttons row
-            col_btn1, col_btn2, col_btn3 = st.columns(3)
-            
-            with col_btn1:
-                if st.button("➕ Add Functional Failure", use_container_width=True):
-                    if failure_description:
-                        failure = {
-                            'id': f"FF-{func_id}.{len([f for f in st.session_state.functional_failures if f['function_id'] == func_id]) + 1}",
-                            'function_id': func_id,
-                            'function_statement': next(f['full_statement'] for f in st.session_state.functions if f['id'] == func_id),
-                            'description': failure_description,
-                            'category': failure_category
-                        }
-                        st.session_state.functional_failures.append(failure)
-                        # Clear the text box after adding
-                        st.session_state.ff_description_input = ''
-                        save_asset_analysis_data()
-                        st.success(f"✅ Functional Failure {failure['id']} added!")
-                        st.rerun()
-            
-            with col_btn2:
-                if st.button("✏️ Update Functional Failure", 
-                           disabled=not st.session_state.functional_failures,
-                           use_container_width=True):
-                    st.session_state.editing_functional_failure = True
+            # Add button
+            if st.button("➕ Add Functional Failure", use_container_width=True):
+                if failure_description:
+                    failure = {
+                        'id': f"FF-{func_id}.{len([f for f in st.session_state.functional_failures if f['function_id'] == func_id]) + 1}",
+                        'function_id': func_id,
+                        'function_statement': next(f['full_statement'] for f in st.session_state.functions if f['id'] == func_id),
+                        'description': failure_description,
+                        'category': failure_category
+                    }
+                    st.session_state.functional_failures.append(failure)
+                    save_asset_analysis_data()
+                    st.success(f"✅ Functional Failure {failure['id']} added!")
                     st.rerun()
             
-            with col_btn3:
-                if st.button("🗑️ Delete Functional Failure", 
-                           disabled=not st.session_state.functional_failures,
-                           use_container_width=True):
-                    st.session_state.deleting_functional_failure = True
-                    st.rerun()
-            
-            # Update Functional Failure Section
-            if st.session_state.get('editing_functional_failure', False) and st.session_state.functional_failures:
+            # Display table with selection
+            if function_failures:
                 st.markdown("---")
-                st.markdown("### ✏️ Update Functional Failure")
+                st.subheader(f"View, Update or Delete Functional Failures for Function {func_id}")
                 
-                failure_options = [f"{f['id']}: {f['description']}" for f in st.session_state.functional_failures]
-                selected_failure_to_update = st.selectbox(
-                    "Select Functional Failure to Update",
+                # Create selection interface using radio buttons
+                failure_options = ["None"] + [f"{f['id']}: {f['description']}" for f in function_failures]
+                selected_failure = st.radio(
+                    "Select a Functional Failure to Update or Delete:",
                     failure_options,
-                    key="update_ff_select"
+                    key="ff_selection"
                 )
                 
-                failure_idx = failure_options.index(selected_failure_to_update)
-                current_failure = st.session_state.functional_failures[failure_idx]
-                
-                updated_description = st.text_area(
-                    "Update Description",
-                    value=current_failure['description'],
-                    key="update_ff_desc"
-                )
-                
-                updated_category = st.radio(
-                    "Update Category",
-                    ["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"],
-                    index=["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"].index(current_failure['category']),
-                    key="update_ff_cat"
-                )
-                
-                col_update1, col_update2 = st.columns(2)
-                with col_update1:
-                    if st.button("💾 Save Update", type="primary", use_container_width=True):
-                        if updated_description:
-                            st.session_state.functional_failures[failure_idx]['description'] = updated_description
-                            st.session_state.functional_failures[failure_idx]['category'] = updated_category
-                            st.session_state.editing_functional_failure = False
-                            save_asset_analysis_data()
-                            st.success(f"✅ Functional Failure {current_failure['id']} updated!")
-                            st.rerun()
-                        else:
-                            st.error("Description cannot be empty")
-                with col_update2:
-                    if st.button("❌ Cancel Update", use_container_width=True):
-                        st.session_state.editing_functional_failure = False
-                        st.rerun()
-            
-            # Delete Functional Failure Section
-            if st.session_state.get('deleting_functional_failure', False) and st.session_state.functional_failures:
-                st.markdown("---")
-                st.markdown("### 🗑️ Delete Functional Failure")
-                st.warning("⚠️ Warning: Deleting a functional failure will also delete all associated failure modes!")
-                
-                failure_options = [f"{f['id']}: {f['description']}" for f in st.session_state.functional_failures]
-                selected_failure_to_delete = st.selectbox(
-                    "Select Functional Failure to Delete",
-                    failure_options,
-                    key="delete_ff_select"
-                )
-                
-                failure_idx = failure_options.index(selected_failure_to_delete)
-                failure_to_delete = st.session_state.functional_failures[failure_idx]
-                
-                # Count associated failure modes
-                associated_modes = [fm for fm in st.session_state.failure_modes if fm.get('failure_id') == failure_to_delete['id']]
-                
-                if associated_modes:
-                    st.info(f"ℹ️ This will delete {len(associated_modes)} associated failure mode(s)")
-                
-                col_del1, col_del2 = st.columns(2)
-                with col_del1:
-                    if st.button("🗑️ Confirm Delete", type="primary", use_container_width=True):
-                        # Delete associated failure modes
-                        st.session_state.failure_modes = [fm for fm in st.session_state.failure_modes 
-                                                          if fm.get('failure_id') != failure_to_delete['id']]
-                        # Delete the functional failure
-                        st.session_state.functional_failures.pop(failure_idx)
-                        st.session_state.deleting_functional_failure = False
-                        # Clear the functional failure text box
-                        st.session_state.ff_description_input = ''
-                        save_asset_analysis_data()
-                        st.success(f"✅ Functional Failure {failure_to_delete['id']} deleted!")
-                        st.rerun()
-                with col_del2:
-                    if st.button("❌ Cancel Delete", use_container_width=True):
-                        st.session_state.deleting_functional_failure = False
-                        st.rerun()
-            
-            if st.session_state.functional_failures:
-                st.markdown("---")
-                st.subheader("Defined Functional Failures")
-                failures_df = pd.DataFrame(st.session_state.functional_failures)
+                # Display table
+                failures_df = pd.DataFrame(function_failures)
                 st.dataframe(failures_df, use_container_width=True)
+                
+                # Show Update/Delete options if a failure is selected
+                if selected_failure != "None":
+                    selected_idx = failure_options.index(selected_failure) - 1
+                    current_failure = function_failures[selected_idx]
+                    # Find index in full list
+                    failure_idx = next(i for i, f in enumerate(st.session_state.functional_failures) if f['id'] == current_failure['id'])
+                    
+                    # Update Section
+                    if not st.session_state.get('editing_functional_failure', False):
+                        col_action1, col_action2 = st.columns(2)
+                        with col_action1:
+                            if st.button("✏️ Update Selected", use_container_width=True):
+                                st.session_state.editing_functional_failure = True
+                                st.rerun()
+                        with col_action2:
+                            if st.button("🗑️ Delete Selected", use_container_width=True):
+                                st.session_state.deleting_functional_failure = True
+                                st.rerun()
+                    
+                    # Update Form
+                    if st.session_state.get('editing_functional_failure', False):
+                        st.markdown("---")
+                        st.markdown("### ✏️ Update Functional Failure")
+                        
+                        updated_description = st.text_area(
+                            "Update Description",
+                            value=current_failure['description'],
+                            key="update_ff_desc"
+                        )
+                        
+                        updated_category = st.radio(
+                            "Update Category",
+                            ["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"],
+                            index=["Complete loss of function", "Partial loss of function", "Exceeds upper limit", "Below lower limit"].index(current_failure['category']),
+                            key="update_ff_cat"
+                        )
+                        
+                        col_update1, col_update2 = st.columns(2)
+                        with col_update1:
+                            if st.button("💾 Save Update", type="primary", use_container_width=True):
+                                if updated_description:
+                                    st.session_state.functional_failures[failure_idx]['description'] = updated_description
+                                    st.session_state.functional_failures[failure_idx]['category'] = updated_category
+                                    st.session_state.editing_functional_failure = False
+                                    save_asset_analysis_data()
+                                    st.success(f"✅ Functional Failure {current_failure['id']} updated!")
+                                    st.rerun()
+                                else:
+                                    st.error("Description cannot be empty")
+                        with col_update2:
+                            if st.button("❌ Cancel Update", use_container_width=True):
+                                st.session_state.editing_functional_failure = False
+                                st.rerun()
+                    
+                    # Delete Confirmation
+                    if st.session_state.get('deleting_functional_failure', False):
+                        st.markdown("---")
+                        st.markdown("### 🗑️ Delete Functional Failure")
+                        st.warning("⚠️ Warning: Deleting a functional failure will also delete all associated failure modes!")
+                        
+                        # Count associated failure modes
+                        associated_modes = [fm for fm in st.session_state.failure_modes if fm.get('failure_id') == current_failure['id']]
+                        
+                        if associated_modes:
+                            st.info(f"ℹ️ This will delete {len(associated_modes)} associated failure mode(s)")
+                        
+                        col_del1, col_del2 = st.columns(2)
+                        with col_del1:
+                            if st.button("🗑️ Confirm Delete", type="primary", use_container_width=True):
+                                # Delete associated failure modes
+                                st.session_state.failure_modes = [fm for fm in st.session_state.failure_modes 
+                                                                  if fm.get('failure_id') != current_failure['id']]
+                                # Delete the functional failure
+                                st.session_state.functional_failures.pop(failure_idx)
+                                st.session_state.deleting_functional_failure = False
+                                save_asset_analysis_data()
+                                st.success(f"✅ Functional Failure {current_failure['id']} deleted!")
+                                st.rerun()
+                        with col_del2:
+                            if st.button("❌ Cancel Delete", use_container_width=True):
+                                st.session_state.deleting_functional_failure = False
+                                st.rerun()
     
     # Step 4: Failure Modes
     with analysis_tab[2]:
@@ -1452,6 +1444,12 @@ def stage_2_analysis():
         if not st.session_state.functional_failures:
             st.warning("⚠️ Please define functional failures first (Step 3)")
         else:
+            # Show available components info
+            available_components = st.session_state.get('components', [])
+            if available_components:
+                st.info(f"ℹ️ {len(available_components)} component(s) available for this asset")
+            else:
+                st.warning("⚠️ No components defined for this asset. Please add components in Stage 1.")
             col1, col2 = st.columns([3, 1])
             
             with col1:
@@ -1473,9 +1471,16 @@ def stage_2_analysis():
                 - Overloading
                 """)
             
+            # Get components for the selected asset
+            available_components = st.session_state.get('components', [])
+            if available_components:
+                component_options = ["Select..."] + available_components
+            else:
+                component_options = ["Define components in Stage 1"]
+            
             component = st.selectbox(
                 "Component",
-                ["Select..."] + (st.session_state.components if st.session_state.components else ["Define components in Stage 1"])
+                component_options
             )
             
             failure_mode_desc = st.text_area(
@@ -1490,10 +1495,20 @@ def stage_2_analysis():
                  "Human error", "Overloading", "Other"]
             )
             
-            if st.button("➕ Add Failure Mode"):
-                if component != "Select..." and failure_mode_desc:
+            # Filter failure modes for selected functional failure
+            functional_failure_modes = [m for m in st.session_state.failure_modes if m.get('functional_failure_id') == failure_id]
+            
+            # Add button
+            if st.button("➕ Add Failure Mode", use_container_width=True):
+                if component == "Define components in Stage 1":
+                    st.error("⚠️ Please define components in Stage 1 first")
+                elif component == "Select...":
+                    st.error("⚠️ Please select a component")
+                elif not failure_mode_desc:
+                    st.error("⚠️ Please enter a failure mode description")
+                else:
                     mode = {
-                        'id': f"FM-{failure_id}-{len([m for m in st.session_state.failure_modes if m['functional_failure_id'] == failure_id]) + 1}",
+                        'id': f"FM-{failure_id}-{len(functional_failure_modes) + 1}",
                         'functional_failure_id': failure_id,
                         'component': component,
                         'description': failure_mode_desc,
@@ -1504,11 +1519,121 @@ def stage_2_analysis():
                     st.success(f"✅ Failure Mode {mode['id']} added!")
                     st.rerun()
             
-            if st.session_state.failure_modes:
+            # Display table with selection
+            if functional_failure_modes:
                 st.markdown("---")
-                st.subheader("Defined Failure Modes")
-                modes_df = pd.DataFrame(st.session_state.failure_modes)
+                st.subheader(f"View, Update or Delete Failure Modes for Functional Failure {failure_id}")
+                
+                # Create selection interface using radio buttons
+                mode_options = ["None"] + [f"{m['id']}: {m['component']} - {m['description']}" for m in functional_failure_modes]
+                selected_mode = st.radio(
+                    "Select a Failure Mode to Update or Delete:",
+                    mode_options,
+                    key="fm_selection"
+                )
+                
+                # Display table
+                modes_df = pd.DataFrame(functional_failure_modes)
                 st.dataframe(modes_df, use_container_width=True)
+                
+                # Show Update/Delete options if a mode is selected
+                if selected_mode != "None":
+                    selected_idx = mode_options.index(selected_mode) - 1
+                    current_mode = functional_failure_modes[selected_idx]
+                    # Find index in full list
+                    mode_idx = next(i for i, m in enumerate(st.session_state.failure_modes) if m['id'] == current_mode['id'])
+                    
+                    # Update Section
+                    if not st.session_state.get('editing_failure_mode', False):
+                        col_action1, col_action2 = st.columns(2)
+                        with col_action1:
+                            if st.button("✏️ Update Selected", use_container_width=True, key="update_fm_btn"):
+                                st.session_state.editing_failure_mode = True
+                                st.rerun()
+                        with col_action2:
+                            if st.button("🗑️ Delete Selected", use_container_width=True, key="delete_fm_btn"):
+                                st.session_state.deleting_failure_mode = True
+                                st.rerun()
+                    
+                    # Update Form
+                    if st.session_state.get('editing_failure_mode', False):
+                        st.markdown("---")
+                        st.markdown("### ✏️ Update Failure Mode")
+                        
+                        # Get components for the selected asset
+                        available_components_update = st.session_state.get('components', [])
+                        if available_components_update:
+                            component_options_update = ["Select..."] + available_components_update
+                            current_comp_idx = component_options_update.index(current_mode['component']) if current_mode['component'] in component_options_update else 0
+                        else:
+                            component_options_update = ["Define components in Stage 1"]
+                            current_comp_idx = 0
+                        
+                        updated_component = st.selectbox(
+                            "Update Component",
+                            component_options_update,
+                            index=current_comp_idx,
+                            key="update_fm_comp"
+                        )
+                        
+                        updated_description = st.text_area(
+                            "Update Description",
+                            value=current_mode['description'],
+                            key="update_fm_desc"
+                        )
+                        
+                        updated_category = st.selectbox(
+                            "Update Category",
+                            ["Select...", "Deterioration (wear, corrosion, fatigue)", 
+                             "Lubrication failure", "Dirt/contamination", "Disassembly (loose connections)",
+                             "Human error", "Overloading", "Other"],
+                            index=["Select...", "Deterioration (wear, corrosion, fatigue)", 
+                                   "Lubrication failure", "Dirt/contamination", "Disassembly (loose connections)",
+                                   "Human error", "Overloading", "Other"].index(current_mode['category']) if current_mode['category'] in ["Select...", "Deterioration (wear, corrosion, fatigue)", 
+                                   "Lubrication failure", "Dirt/contamination", "Disassembly (loose connections)",
+                                   "Human error", "Overloading", "Other"] else 0,
+                            key="update_fm_cat"
+                        )
+                        
+                        col_update1, col_update2 = st.columns(2)
+                        with col_update1:
+                            if st.button("💾 Save Update", type="primary", use_container_width=True, key="save_fm_update"):
+                                if updated_component == "Select..." or updated_component == "Define components in Stage 1":
+                                    st.error("Please select a valid component")
+                                elif not updated_description:
+                                    st.error("Description cannot be empty")
+                                else:
+                                    st.session_state.failure_modes[mode_idx]['component'] = updated_component
+                                    st.session_state.failure_modes[mode_idx]['description'] = updated_description
+                                    st.session_state.failure_modes[mode_idx]['category'] = updated_category
+                                    st.session_state.editing_failure_mode = False
+                                    save_asset_analysis_data()
+                                    st.success(f"✅ Failure Mode {current_mode['id']} updated!")
+                                    st.rerun()
+                        with col_update2:
+                            if st.button("❌ Cancel Update", use_container_width=True, key="cancel_fm_update"):
+                                st.session_state.editing_failure_mode = False
+                                st.rerun()
+                    
+                    # Delete Confirmation
+                    if st.session_state.get('deleting_failure_mode', False):
+                        st.markdown("---")
+                        st.markdown("### 🗑️ Delete Failure Mode")
+                        st.warning("⚠️ Warning: This will delete the selected failure mode!")
+                        
+                        col_del1, col_del2 = st.columns(2)
+                        with col_del1:
+                            if st.button("🗑️ Confirm Delete", type="primary", use_container_width=True, key="confirm_fm_delete"):
+                                # Delete the failure mode
+                                st.session_state.failure_modes.pop(mode_idx)
+                                st.session_state.deleting_failure_mode = False
+                                save_asset_analysis_data()
+                                st.success(f"✅ Failure Mode {current_mode['id']} deleted!")
+                                st.rerun()
+                        with col_del2:
+                            if st.button("❌ Cancel Delete", use_container_width=True, key="cancel_fm_delete"):
+                                st.session_state.deleting_failure_mode = False
+                                st.rerun()
     
     # Step 5: Failure Effects
     with analysis_tab[3]:
@@ -1565,22 +1690,199 @@ def stage_2_analysis():
                 downtime = st.number_input("Total Downtime (hours)", min_value=0.0, step=0.5,
                                           help="Includes diagnosis, parts, repair, and recommissioning")
             
-            if st.button("➕ Add Failure Effect"):
-                # Find the failure mode to update
-                for mode in st.session_state.failure_modes:
-                    if mode['id'] == mode_id:
-                        mode['effects'] = {
-                            'evidence': evidence,
-                            'safety_impact': safety_impact,
-                            'operational_impact': operational_impact,
-                            'physical_damage': physical_damage,
-                            'repair_action': repair_action,
-                            'repair_time': repair_time,
-                            'downtime': downtime
-                        }
-                        save_asset_analysis_data()
-                        st.success(f"✅ Failure effects added to {mode_id}")
-                        st.rerun()
+            # Check if effects already exist for this failure mode
+            current_mode = next((m for m in st.session_state.failure_modes if m['id'] == mode_id), None)
+            has_effects = current_mode and 'effects' in current_mode
+            
+            # Add button
+            if st.button("➕ Add Failure Effect", use_container_width=True):
+                if not evidence:
+                    st.error("⚠️ Please enter evidence of failure")
+                else:
+                    # Find the failure mode to update
+                    for mode in st.session_state.failure_modes:
+                        if mode['id'] == mode_id:
+                            mode['effects'] = {
+                                'evidence': evidence,
+                                'safety_impact': safety_impact,
+                                'operational_impact': operational_impact,
+                                'physical_damage': physical_damage,
+                                'repair_action': repair_action,
+                                'repair_time': repair_time,
+                                'downtime': downtime
+                            }
+                            save_asset_analysis_data()
+                            st.success(f"✅ Failure effects added to {mode_id}")
+                            st.rerun()
+            
+            # Display table with selection for failure modes with effects
+            modes_with_effects = [m for m in st.session_state.failure_modes if 'effects' in m]
+            
+            if modes_with_effects:
+                st.markdown("---")
+                st.subheader(f"View, Update or Delete Failure Effects")
+                
+                # Create selection interface using radio buttons
+                effect_options = ["None"] + [f"{m['id']}: {m['component']} - {m['description']}" for m in modes_with_effects]
+                selected_effect = st.radio(
+                    "Select a Failure Mode to View, Update or Delete its Effects:",
+                    effect_options,
+                    key="effect_selection"
+                )
+                
+                # Display table of failure modes with effects
+                effects_display = []
+                for m in modes_with_effects:
+                    effects_display.append({
+                        'Failure Mode ID': m['id'],
+                        'Component': m['component'],
+                        'Description': m['description'],
+                        'Evidence': m['effects'].get('evidence', 'N/A'),
+                        'Safety Impact': m['effects'].get('safety_impact', 'N/A'),
+                        'Operational Impact': m['effects'].get('operational_impact', 'N/A'),
+                        'Physical Damage': m['effects'].get('physical_damage', 'N/A'),
+                        'Repair Action': m['effects'].get('repair_action', 'N/A'),
+                        'Repair Time (hrs)': m['effects'].get('repair_time', 0),
+                        'Downtime (hrs)': m['effects'].get('downtime', 0)
+                    })
+                effects_df = pd.DataFrame(effects_display)
+                st.dataframe(effects_df, use_container_width=True, height=400)
+                
+                # Show Update/Delete options if an effect is selected
+                if selected_effect != "None":
+                    selected_mode_id = selected_effect.split(":")[0]
+                    selected_mode = next(m for m in modes_with_effects if m['id'] == selected_mode_id)
+                    mode_idx = next(i for i, m in enumerate(st.session_state.failure_modes) if m['id'] == selected_mode_id)
+                    
+                    # Display full effects
+                    st.markdown("---")
+                    st.markdown(f"### Effects for {selected_mode_id}")
+                    effects = selected_mode['effects']
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**Evidence:** {effects.get('evidence', 'N/A')}")
+                        st.markdown(f"**Safety Impact:** {effects.get('safety_impact', 'N/A')}")
+                        st.markdown(f"**Operational Impact:** {effects.get('operational_impact', 'N/A')}")
+                    with col2:
+                        st.markdown(f"**Physical Damage:** {effects.get('physical_damage', 'N/A')}")
+                        st.markdown(f"**Repair Action:** {effects.get('repair_action', 'N/A')}")
+                        st.markdown(f"**Repair Time:** {effects.get('repair_time', 0)} hours")
+                        st.markdown(f"**Downtime:** {effects.get('downtime', 0)} hours")
+                    
+                    # Update Section
+                    if not st.session_state.get('editing_failure_effect', False):
+                        col_action1, col_action2 = st.columns(2)
+                        with col_action1:
+                            if st.button("✏️ Update Selected", use_container_width=True, key="update_effect_btn"):
+                                st.session_state.editing_failure_effect = True
+                                st.rerun()
+                        with col_action2:
+                            if st.button("🗑️ Delete Selected", use_container_width=True, key="delete_effect_btn"):
+                                st.session_state.deleting_failure_effect = True
+                                st.rerun()
+                    
+                    # Update Form
+                    if st.session_state.get('editing_failure_effect', False):
+                        st.markdown("---")
+                        st.markdown("### ✏️ Update Failure Effects")
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            updated_evidence = st.text_area(
+                                "Update Evidence of Failure",
+                                value=effects.get('evidence', ''),
+                                key="update_effect_evidence"
+                            )
+                            
+                            updated_safety = st.text_area(
+                                "Update Safety/Environmental Impact",
+                                value=effects.get('safety_impact', ''),
+                                key="update_effect_safety"
+                            )
+                        
+                        with col2:
+                            updated_operational = st.text_area(
+                                "Update Operational Impact",
+                                value=effects.get('operational_impact', ''),
+                                key="update_effect_operational"
+                            )
+                            
+                            updated_damage = st.text_area(
+                                "Update Physical Damage",
+                                value=effects.get('physical_damage', ''),
+                                key="update_effect_damage"
+                            )
+                        
+                        updated_repair = st.text_area(
+                            "Update Repair Action Required",
+                            value=effects.get('repair_action', ''),
+                            key="update_effect_repair"
+                        )
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            updated_repair_time = st.number_input(
+                                "Update Repair Time (hours)",
+                                min_value=0.0,
+                                step=0.5,
+                                value=float(effects.get('repair_time', 0)),
+                                key="update_effect_repair_time"
+                            )
+                        with col2:
+                            updated_downtime = st.number_input(
+                                "Update Total Downtime (hours)",
+                                min_value=0.0,
+                                step=0.5,
+                                value=float(effects.get('downtime', 0)),
+                                key="update_effect_downtime"
+                            )
+                        
+                        col_update1, col_update2 = st.columns(2)
+                        with col_update1:
+                            if st.button("💾 Save Update", type="primary", use_container_width=True, key="save_effect_update"):
+                                if not updated_evidence:
+                                    st.error("Evidence cannot be empty")
+                                else:
+                                    st.session_state.failure_modes[mode_idx]['effects'] = {
+                                        'evidence': updated_evidence,
+                                        'safety_impact': updated_safety,
+                                        'operational_impact': updated_operational,
+                                        'physical_damage': updated_damage,
+                                        'repair_action': updated_repair,
+                                        'repair_time': updated_repair_time,
+                                        'downtime': updated_downtime
+                                    }
+                                    st.session_state.editing_failure_effect = False
+                                    save_asset_analysis_data()
+                                    st.success(f"✅ Failure effects for {selected_mode_id} updated!")
+                                    st.rerun()
+                        with col_update2:
+                            if st.button("❌ Cancel Update", use_container_width=True, key="cancel_effect_update"):
+                                st.session_state.editing_failure_effect = False
+                                st.rerun()
+                    
+                    # Delete Confirmation
+                    if st.session_state.get('deleting_failure_effect', False):
+                        st.markdown("---")
+                        st.markdown("### 🗑️ Delete Failure Effects")
+                        st.warning(f"⚠️ Warning: This will delete the failure effects for {selected_mode_id}!")
+                        
+                        col_del1, col_del2 = st.columns(2)
+                        with col_del1:
+                            if st.button("🗑️ Confirm Delete", type="primary", use_container_width=True, key="confirm_effect_delete"):
+                                # Delete the effects
+                                if 'effects' in st.session_state.failure_modes[mode_idx]:
+                                    del st.session_state.failure_modes[mode_idx]['effects']
+                                st.session_state.deleting_failure_effect = False
+                                save_asset_analysis_data()
+                                st.success(f"✅ Failure effects for {selected_mode_id} deleted!")
+                                st.rerun()
+                        with col_del2:
+                            if st.button("❌ Cancel Delete", use_container_width=True, key="cancel_effect_delete"):
+                                st.session_state.deleting_failure_effect = False
+                                st.rerun()
     
     # Step 6: Consequence Categories
     with analysis_tab[4]:
@@ -1710,7 +2012,8 @@ def stage_2_analysis():
                     </div>
                     """, unsafe_allow_html=True)
             
-            if st.button("💾 Save Consequence Category"):
+            # Add/Save button
+            if st.button("💾 Save Consequence Category", use_container_width=True):
                 for mode in st.session_state.failure_modes:
                     if mode['id'] == mode_id:
                         mode['consequence_category'] = consequence_category
@@ -1724,6 +2027,238 @@ def stage_2_analysis():
                         save_asset_analysis_data()
                         st.success(f"✅ Consequence category saved for {mode_id}")
                         st.rerun()
+            
+            # Display table with selection for failure modes with consequence categories
+            modes_with_consequences = [m for m in st.session_state.failure_modes if 'consequence_category' in m]
+            
+            if modes_with_consequences:
+                st.markdown("---")
+                st.subheader(f"View, Update or Delete Consequence Categories")
+                
+                # Create selection interface using radio buttons
+                consequence_options = ["None"] + [f"{m['id']}: {m['component']} - {m['description']}" for m in modes_with_consequences]
+                selected_consequence = st.radio(
+                    "Select a Failure Mode to View, Update or Delete its Consequence Category:",
+                    consequence_options,
+                    key="consequence_selection"
+                )
+                
+                # Display table of failure modes with consequences
+                consequences_display = []
+                for m in modes_with_consequences:
+                    consequences_display.append({
+                        'Failure Mode ID': m['id'],
+                        'Component': m['component'],
+                        'Description': m['description'],
+                        'Consequence Category': m.get('consequence_category', 'N/A'),
+                        'Risk Level': m.get('risk_assessment', {}).get('risk_level', 'N/A') if 'risk_assessment' in m else 'N/A'
+                    })
+                consequences_df = pd.DataFrame(consequences_display)
+                st.dataframe(consequences_df, use_container_width=True)
+                
+                # Show Update/Delete options if a consequence is selected
+                if selected_consequence != "None":
+                    selected_mode_id = selected_consequence.split(":")[0]
+                    selected_mode = next(m for m in modes_with_consequences if m['id'] == selected_mode_id)
+                    mode_idx = next(i for i, m in enumerate(st.session_state.failure_modes) if m['id'] == selected_mode_id)
+                    
+                    # Display full consequence details
+                    st.markdown("---")
+                    st.markdown(f"### Consequence Category for {selected_mode_id}")
+                    
+                    st.markdown(f"**Consequence Category:** {selected_mode.get('consequence_category', 'N/A')}")
+                    
+                    if 'risk_assessment' in selected_mode:
+                        risk = selected_mode['risk_assessment']
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.markdown(f"**Consequence:** {risk.get('consequence', 'N/A')}")
+                        with col2:
+                            st.markdown(f"**Likelihood:** {risk.get('likelihood', 'N/A')}")
+                        with col3:
+                            st.markdown(f"**Risk Level:** {risk.get('risk_level', 'N/A')} (Score: {risk.get('risk_score', 0)})")
+                    
+                    # Update Section
+                    if not st.session_state.get('editing_consequence', False):
+                        col_action1, col_action2 = st.columns(2)
+                        with col_action1:
+                            if st.button("✏️ Update Selected", use_container_width=True, key="update_consequence_btn"):
+                                st.session_state.editing_consequence = True
+                                st.rerun()
+                        with col_action2:
+                            if st.button("🗑️ Delete Selected", use_container_width=True, key="delete_consequence_btn"):
+                                st.session_state.deleting_consequence = True
+                                st.rerun()
+                    
+                    # Update Form
+                    if st.session_state.get('editing_consequence', False):
+                        st.markdown("---")
+                        st.markdown("### ✏️ Update Consequence Category")
+                        
+                        # Get current values
+                        current_category = selected_mode.get('consequence_category', '')
+                        
+                        # Determine if it's hidden or evident
+                        is_hidden = "Hidden" in current_category
+                        
+                        # Question 1: Evident or Hidden?
+                        updated_is_evident = st.radio(
+                            "**Q1: Will the failure become evident to operators under normal circumstances?**",
+                            ["Yes - Evident", "No - Hidden (failure of protective device)"],
+                            index=0 if not is_hidden else 1,
+                            key="update_is_evident"
+                        )
+                        
+                        # Branch based on evident/hidden
+                        if "Hidden" in updated_is_evident:
+                            st.info("This is a **Hidden Failure** - typically protective devices that fail silently")
+                            
+                            # Determine current consequence type
+                            if "Safety" in current_category:
+                                current_idx = 0
+                            elif "Operational" in current_category:
+                                current_idx = 1
+                            else:
+                                current_idx = 2
+                            
+                            updated_hidden_consequence = st.radio(
+                                "**Q2: If a multiple failure occurs (protected function fails while protective device is failed), what are the consequences?**",
+                                ["Safety or Environmental impact", "Operational impact", "Non-operational (just repair cost)"],
+                                index=current_idx,
+                                key="update_hidden_consequence"
+                            )
+                            
+                            if "Safety" in updated_hidden_consequence:
+                                updated_consequence_category = "Hidden (Safety/Environmental)"
+                            elif "Operational" in updated_hidden_consequence:
+                                updated_consequence_category = "Hidden (Operational)"
+                            else:
+                                updated_consequence_category = "Hidden (Non-operational)"
+                        
+                        else:  # Evident
+                            st.info("This is an **Evident Failure** - operators will know when it occurs")
+                            
+                            # Determine current consequence type
+                            if "Safety" in current_category:
+                                current_idx = 0
+                            elif "Operational" in current_category:
+                                current_idx = 1
+                            else:
+                                current_idx = 2
+                            
+                            updated_evident_consequence = st.radio(
+                                "**Q2: What are the consequences of this evident failure?**",
+                                ["Safety or Environmental impact", 
+                                 "Operational impact (affects output, quality, service, or operating costs)", 
+                                 "Non-operational (only direct repair cost)"],
+                                index=current_idx,
+                                key="update_evident_consequence"
+                            )
+                            
+                            if "Safety" in updated_evident_consequence:
+                                updated_consequence_category = "Evident (Safety/Environmental)"
+                            elif "Operational" in updated_evident_consequence:
+                                updated_consequence_category = "Evident (Operational)"
+                            else:
+                                updated_consequence_category = "Evident (Non-operational)"
+                        
+                        st.markdown(f"**Updated Consequence Category:** {updated_consequence_category}")
+                        
+                        # Risk assessment for safety consequences
+                        if "Safety" in updated_consequence_category or "Environmental" in updated_consequence_category:
+                            st.markdown("#### Risk Assessment")
+                            col1, col2, col3 = st.columns(3)
+                            
+                            # Get current risk values
+                            current_risk = selected_mode.get('risk_assessment', {})
+                            current_cons = current_risk.get('consequence', '3-Moderate')
+                            current_like = current_risk.get('likelihood', '3-Occasional')
+                            
+                            with col1:
+                                updated_consequence_rating = st.select_slider(
+                                    "Consequence Severity",
+                                    options=["1-Insignificant", "2-Minor", "3-Moderate", "4-High", "5-Catastrophic"],
+                                    value=current_cons,
+                                    key="update_consequence_rating"
+                                )
+                            
+                            with col2:
+                                updated_likelihood_rating = st.select_slider(
+                                    "Likelihood",
+                                    options=["1-Rare", "2-Unlikely", "3-Occasional", "4-Likely", "5-Almost Certain"],
+                                    value=current_like,
+                                    key="update_likelihood_rating"
+                                )
+                            
+                            with col3:
+                                # Calculate risk score
+                                cons_num = int(updated_consequence_rating[0])
+                                like_num = int(updated_likelihood_rating[0])
+                                risk_score = cons_num + like_num
+                                
+                                if risk_score >= 8:
+                                    risk_level = "High"
+                                    risk_color = "red"
+                                elif risk_score >= 6:
+                                    risk_level = "Medium"
+                                    risk_color = "orange"
+                                else:
+                                    risk_level = "Low"
+                                    risk_color = "green"
+                                
+                                st.markdown(f"""
+                                <div style="background-color: {risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
+                                <strong>Risk Level: {risk_level}</strong><br>
+                                Score: {risk_score}
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        col_update1, col_update2 = st.columns(2)
+                        with col_update1:
+                            if st.button("💾 Save Update", type="primary", use_container_width=True, key="save_consequence_update"):
+                                st.session_state.failure_modes[mode_idx]['consequence_category'] = updated_consequence_category
+                                if "Safety" in updated_consequence_category or "Environmental" in updated_consequence_category:
+                                    st.session_state.failure_modes[mode_idx]['risk_assessment'] = {
+                                        'consequence': updated_consequence_rating,
+                                        'likelihood': updated_likelihood_rating,
+                                        'risk_score': risk_score,
+                                        'risk_level': risk_level
+                                    }
+                                else:
+                                    # Remove risk assessment if not safety/environmental
+                                    if 'risk_assessment' in st.session_state.failure_modes[mode_idx]:
+                                        del st.session_state.failure_modes[mode_idx]['risk_assessment']
+                                st.session_state.editing_consequence = False
+                                save_asset_analysis_data()
+                                st.success(f"✅ Consequence category for {selected_mode_id} updated!")
+                                st.rerun()
+                        with col_update2:
+                            if st.button("❌ Cancel Update", use_container_width=True, key="cancel_consequence_update"):
+                                st.session_state.editing_consequence = False
+                                st.rerun()
+                    
+                    # Delete Confirmation
+                    if st.session_state.get('deleting_consequence', False):
+                        st.markdown("---")
+                        st.markdown("### 🗑️ Delete Consequence Category")
+                        st.warning(f"⚠️ Warning: This will delete the consequence category for {selected_mode_id}!")
+                        
+                        col_del1, col_del2 = st.columns(2)
+                        with col_del1:
+                            if st.button("🗑️ Confirm Delete", type="primary", use_container_width=True, key="confirm_consequence_delete"):
+                                # Delete the consequence category
+                                if 'consequence_category' in st.session_state.failure_modes[mode_idx]:
+                                    del st.session_state.failure_modes[mode_idx]['consequence_category']
+                                if 'risk_assessment' in st.session_state.failure_modes[mode_idx]:
+                                    del st.session_state.failure_modes[mode_idx]['risk_assessment']
+                                st.session_state.deleting_consequence = False
+                                save_asset_analysis_data()
+                                st.success(f"✅ Consequence category for {selected_mode_id} deleted!")
+                                st.rerun()
+                        with col_del2:
+                            if st.button("❌ Cancel Delete", use_container_width=True, key="cancel_consequence_delete"):
+                                st.session_state.deleting_consequence = False
+                                st.rerun()
     
     # Step 7: Task Selection
     with analysis_tab[5]:
