@@ -19,9 +19,8 @@
       "site_location": "Mangadang WPS",
       "components": [
         "VSD Pump 1",
-        "Motor Pump 1",
-        "Motor Control Center Pump 1",
-        "Pump 1"
+        "Motor 1, Pump 1",
+        "Pump Set 1"
       ],
       "operating_context": {},
       "functions": [
@@ -69,7 +68,7 @@
         {
           "id": "FM-FF-1.1-1",
           "functional_failure_id": "FF-1.1",
-          "component": "Pump 1",
+          "component": "Pump Set 1",
           "description": "Blockage due to debris",
           "category": "Other",
           "effects": {
@@ -81,30 +80,28 @@
             "repair_time": 4.0,
             "downtime": 8.0
           },
-          "consequence_category": "Evident (Operational)"
+          "consequence_category": "Evident (Safety/Environmental)",
+          "risk_assessment": {
+            "consequence": "4-High",
+            "likelihood": "4-Likely",
+            "risk_score": 8,
+            "risk_level": "High"
+          },
+          "management_task": {
+            "task_type": "Redesign",
+            "description": "",
+            "technically_feasible": "Yes",
+            "worth_doing": "Yes",
+            "justification": "",
+            "cost": 0.0
+          }
         },
         {
           "id": "FM-FF-1.1-2",
           "functional_failure_id": "FF-1.1",
-          "component": "Pump 1",
+          "component": "Pump Set 1",
           "description": "Worn bearings due to normal wear",
-          "category": "Deterioration (wear, corrosion, fatigue)",
-          "effects": {
-            "evidence": "Motor and Pump stop resulting in zero flow.",
-            "safety_impact": "Potential safety hazard due to disintegration of components.",
-            "operational_impact": "Customer demand not met.",
-            "physical_damage": "Motor, coupling and pump destroyed",
-            "repair_action": "Replace motor coupling and pump.",
-            "repair_time": 8.0,
-            "downtime": 72.0
-          },
-          "consequence_category": "Evident (Safety/Environmental)",
-          "risk_assessment": {
-            "consequence": "5-Catastrophic",
-            "likelihood": "3-Occasional",
-            "risk_score": 8,
-            "risk_level": "High"
-          }
+          "category": "Deterioration (wear, corrosion, fatigue)"
         },
         {
           "id": "FM-FF-1.2-1",
@@ -121,17 +118,29 @@
           "category": "Deterioration (wear, corrosion, fatigue)"
         }
       ],
-      "analysis_results": []
+      "analysis_results": [
+        {
+          "failure_mode_id": "FM-FF-1.1-1",
+          "component": "Pump 1",
+          "failure_mode": "Blockage due to debris",
+          "consequence": "Evident (Safety/Environmental)",
+          "task_type": "Redesign",
+          "task_description": "",
+          "frequency": "",
+          "cost": 0.0
+        }
+      ]
     },
     {
-      "asset_name": "Pump No. 2",
+      "asset_name": "Pump Set No. 2",
       "asset_class": "Pump Station",
       "asset_type": "Pumps",
       "site_location": "Mangadang WPS",
       "components": [
         "Motor Control Center Pump 2",
-        "Motor Pump 2",
-        "VSD Pump 2"
+        "Motor 2, Pump 2",
+        "VSD Pump 2",
+        "Pump Set 2"
       ],
       "operating_context": {},
       "functions": [],
@@ -140,11 +149,15 @@
       "analysis_results": []
     },
     {
-      "asset_name": "Pump No. 3",
+      "asset_name": "Pump Set No. 3",
       "asset_class": "Pump Station",
       "asset_type": "Pumps",
       "site_location": "Mangadang WPS",
-      "components": [],
+      "components": [
+        "Pump Set 3",
+        "VSD Pump 3",
+        "Motor 3, Pump 3"
+      ],
       "operating_context": {},
       "functions": [],
       "functional_failures": [],
@@ -162,9 +175,8 @@
   "operating_context": {},
   "components": [
     "VSD Pump 1",
-    "Motor Pump 1",
-    "Motor Control Center Pump 1",
-    "Pump 1"
+    "Motor 1, Pump 1",
+    "Pump Set 1"
   ],
   "functions": [
     {
@@ -211,7 +223,7 @@
     {
       "id": "FM-FF-1.1-1",
       "functional_failure_id": "FF-1.1",
-      "component": "Pump 1",
+      "component": "Pump Set 1",
       "description": "Blockage due to debris",
       "category": "Other",
       "effects": {
@@ -223,30 +235,28 @@
         "repair_time": 4.0,
         "downtime": 8.0
       },
-      "consequence_category": "Evident (Operational)"
+      "consequence_category": "Evident (Safety/Environmental)",
+      "risk_assessment": {
+        "consequence": "4-High",
+        "likelihood": "4-Likely",
+        "risk_score": 8,
+        "risk_level": "High"
+      },
+      "management_task": {
+        "task_type": "Redesign",
+        "description": "",
+        "technically_feasible": "Yes",
+        "worth_doing": "Yes",
+        "justification": "",
+        "cost": 0.0
+      }
     },
     {
       "id": "FM-FF-1.1-2",
       "functional_failure_id": "FF-1.1",
-      "component": "Pump 1",
+      "component": "Pump Set 1",
       "description": "Worn bearings due to normal wear",
-      "category": "Deterioration (wear, corrosion, fatigue)",
-      "effects": {
-        "evidence": "Motor and Pump stop resulting in zero flow.",
-        "safety_impact": "Potential safety hazard due to disintegration of components.",
-        "operational_impact": "Customer demand not met.",
-        "physical_damage": "Motor, coupling and pump destroyed",
-        "repair_action": "Replace motor coupling and pump.",
-        "repair_time": 8.0,
-        "downtime": 72.0
-      },
-      "consequence_category": "Evident (Safety/Environmental)",
-      "risk_assessment": {
-        "consequence": "5-Catastrophic",
-        "likelihood": "3-Occasional",
-        "risk_score": 8,
-        "risk_level": "High"
-      }
+      "category": "Deterioration (wear, corrosion, fatigue)"
     },
     {
       "id": "FM-FF-1.2-1",
@@ -263,7 +273,18 @@
       "category": "Deterioration (wear, corrosion, fatigue)"
     }
   ],
-  "analysis_results": [],
-  "current_stage": 2,
-  "autosave_date": "2025-12-02T12:15:56.432153"
+  "analysis_results": [
+    {
+      "failure_mode_id": "FM-FF-1.1-1",
+      "component": "Pump 1",
+      "failure_mode": "Blockage due to debris",
+      "consequence": "Evident (Safety/Environmental)",
+      "task_type": "Redesign",
+      "task_description": "",
+      "frequency": "",
+      "cost": 0.0
+    }
+  ],
+  "current_stage": 1,
+  "autosave_date": "2025-12-02T17:01:26.153647"
 }

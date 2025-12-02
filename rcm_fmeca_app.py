@@ -412,22 +412,7 @@ def sidebar_navigation():
             st.session_state.current_view = 'rcm_navigation'
             st.rerun()
     
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📖 Information")
-    
-    if st.sidebar.button("ℹ️ About FMECA & RCM", key="nav_about", use_container_width=True):
-        st.session_state.current_view = 'about'
-        st.rerun()
-    
-    if st.sidebar.button("❓ FAQ", key="nav_faq", use_container_width=True):
-        st.session_state.current_view = 'faq'
-        st.rerun()
-    
-    if st.sidebar.button("🚀 Future Development", key="nav_future", use_container_width=True):
-        st.session_state.current_view = 'future'
-        st.rerun()
-    
-    # Import/Export Section
+    # Data Management Section
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📁 Data Management")
     
@@ -471,6 +456,21 @@ def sidebar_navigation():
     if st.sidebar.button("🗑️ Clear Autosave", use_container_width=True, help="Clear automatically saved session data"):
         clear_autosave()
         st.sidebar.success("✅ Autosave cleared!")
+    
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 📖 Information")
+    
+    if st.sidebar.button("ℹ️ About FMECA & RCM", key="nav_about", use_container_width=True):
+        st.session_state.current_view = 'about'
+        st.rerun()
+    
+    if st.sidebar.button("❓ FAQ", key="nav_faq", use_container_width=True):
+        st.session_state.current_view = 'faq'
+        st.rerun()
+    
+    if st.sidebar.button("🚀 Future Development", key="nav_future", use_container_width=True):
+        st.session_state.current_view = 'future'
+        st.rerun()
     
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📚 Quick Reference")
@@ -1106,6 +1106,9 @@ def stage_1_planning():
                         'failure_modes': current_asset.get('failure_modes', []),
                         'analysis_results': current_asset.get('analysis_results', [])
                     }
+                    # Clear cached asset data to force reload with new asset name
+                    if 'last_loaded_asset' in st.session_state:
+                        del st.session_state.last_loaded_asset
                     st.session_state.current_asset_index = None
                     st.session_state.temp_components = []
                     st.session_state.editing_component = None
@@ -2288,6 +2291,100 @@ def stage_2_analysis():
             with col2:
                 if 'risk_assessment' in current_mode:
                     st.markdown(f"**Risk Level:** {current_mode['risk_assessment']['risk_level']}")
+            
+            st.markdown("---")
+            st.markdown("### Risk Assessment")
+            
+            # Display Risk Matrix
+            st.markdown("**Risk Matrix:** Consequence + Likelihood = Risk Score")
+            
+            # Create the risk matrix table with color coding
+            matrix_html = """
+            <style>
+                .risk-matrix {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                    font-size: 14px;
+                }
+                .risk-matrix th, .risk-matrix td {
+                    border: 1px solid #ddd;
+                    padding: 12px;
+                    text-align: center;
+                    font-weight: bold;
+                }
+                .risk-matrix th {
+                    background-color: #f0f0f0;
+                    color: #333;
+                }
+                .risk-low {
+                    background-color: #90EE90;
+                    color: #000;
+                }
+                .risk-medium {
+                    background-color: #FFA500;
+                    color: #fff;
+                }
+                .risk-high {
+                    background-color: #FF6B6B;
+                    color: #fff;
+                }
+            </style>
+            <table class="risk-matrix">
+                <tr>
+                    <th>Consequence →<br>Likelihood ↓</th>
+                    <th>1-Insignificant</th>
+                    <th>2-Minor</th>
+                    <th>3-Moderate</th>
+                    <th>4-High</th>
+                    <th>5-Catastrophic</th>
+                </tr>
+                <tr>
+                    <th>5-Almost Certain</th>
+                    <td class="risk-medium">6 (M)</td>
+                    <td class="risk-high">7 (H)</td>
+                    <td class="risk-high">8 (H)</td>
+                    <td class="risk-high">9 (H)</td>
+                    <td class="risk-high">10 (H)</td>
+                </tr>
+                <tr>
+                    <th>4-Likely</th>
+                    <td class="risk-low">5 (L)</td>
+                    <td class="risk-medium">6 (M)</td>
+                    <td class="risk-high">7 (H)</td>
+                    <td class="risk-high">8 (H)</td>
+                    <td class="risk-high">9 (H)</td>
+                </tr>
+                <tr>
+                    <th>3-Occasional</th>
+                    <td class="risk-low">4 (L)</td>
+                    <td class="risk-low">5 (L)</td>
+                    <td class="risk-medium">6 (M)</td>
+                    <td class="risk-high">7 (H)</td>
+                    <td class="risk-high">8 (H)</td>
+                </tr>
+                <tr>
+                    <th>2-Unlikely</th>
+                    <td class="risk-low">3 (L)</td>
+                    <td class="risk-low">4 (L)</td>
+                    <td class="risk-low">5 (L)</td>
+                    <td class="risk-medium">6 (M)</td>
+                    <td class="risk-high">7 (H)</td>
+                </tr>
+                <tr>
+                    <th>1-Rare</th>
+                    <td class="risk-low">2 (L)</td>
+                    <td class="risk-low">3 (L)</td>
+                    <td class="risk-low">4 (L)</td>
+                    <td class="risk-low">5 (L)</td>
+                    <td class="risk-medium">6 (M)</td>
+                </tr>
+            </table>
+            <p style="font-size: 12px; color: #666;">
+                <strong>Risk Levels:</strong> L = Low (2-5), M = Medium (6-7), H = High (8-10)
+            </p>
+            """
+            st.markdown(matrix_html, unsafe_allow_html=True)
             
             st.markdown("---")
             st.markdown("### Task Selection Decision")
