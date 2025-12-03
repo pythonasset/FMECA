@@ -30,6 +30,10 @@
 │                          [Risk assessment for safety]           │
 │                          [Table-based view/update/delete]       │
 │  Step 7: Task Selection  → How can we manage the failure?       │
+│                          [Cost of Task & Cost of Failure]       │
+│                          [Post-implementation risk for FTM/     │
+│                           Redesign with Safety/Environmental]   │
+│                          [Table-based view/update/delete tasks] │
 │                                                                 │
 │  [Repeat for each asset in project]                             │
 └────────────────────────┬────────────────────────────────────────┘
@@ -155,9 +159,16 @@ Then apply Task Selection Logic...
 **Requirements:**
 
 - Age-related failure pattern
-- Known useful life
+- Known useful life (tracked separately)
+- MTBF (Mean Time Between Failures) data
 - Interval less than useful life
 - Cost-effective vs. consequence
+
+**For Safety/Environmental Consequences:**
+
+- Post-implementation risk assessment required
+- Must demonstrate risk reduction to acceptable levels
+- Risk sliders: Consequence Severity + Likelihood = Risk Level
 
 ### FF - Failure Finding
 
@@ -178,11 +189,24 @@ Then apply Task Selection Logic...
 **How:** One-off change to equipment/process/procedure
 **Example:** "Install redundant pressure transmitter"
 
+**For Safety/Environmental Consequences:**
+
+- Post-implementation risk assessment required
+- Must demonstrate risk reduction to acceptable levels
+- Risk sliders: Consequence Severity + Likelihood = Risk Level
+- Same validation process as FTM tasks
+
 ### OTF - Operate to Failure
 
 **When:** Consequence acceptable AND no cost-effective proactive task
 **How:** Accept failure, repair when occurs
 **Example:** "Replace light bulb when it fails"
+
+**Restrictions:**
+
+- NOT available for Safety/Environmental consequences
+- No cost tracking (task cost or failure cost)
+- Only for Operational and Non-operational consequences
 
 ## Function Types Reference
 
@@ -247,8 +271,13 @@ Inspection Frequency = 1/2 to 1/3 of P-F Interval
 
 ### For FTM Task
 
+**Cost Tracking (Operational/Non-operational only):**
+
+- **Cost of Task**: Labour + Parts + Other
+- **Cost of Failure**: Labour + Parts + Other (separate tracking)
+
 ```
-Annual Cost of Task = (Labour + Parts + Admin) × (365 / Interval)
+Annual Cost of Task = (Labour + Parts + Other) × (365 / Interval)
 Annual Cost of Failure = (Repair Cost + Consequence Cost) × (365 / MTBF)
 
 Task is Worth Doing if:
@@ -260,6 +289,10 @@ Annual Cost of Task < Annual Cost of Failure
 - Replace gasket every 2 years: $350 → $175/year
 - Failure every 3 years: $350 + $1,000 → $450/year
 - Task is worth doing! ($175 < $450)
+
+**Note:** Cost fields are not displayed for:
+- Safety/Environmental consequences (focus on risk reduction)
+- OTF tasks (no preventive cost to track)
 
 ## Risk Assessment Matrix
 
@@ -316,6 +349,7 @@ The application uses a consistent pattern for managing analysis data:
 5. **Save Changes**: Confirm updates or deletions with dedicated buttons
 
 **Benefits:**
+
 - Easy navigation through large datasets
 - Clear view of all entries before taking action
 - Reduced risk of accidental modifications
@@ -324,6 +358,7 @@ The application uses a consistent pattern for managing analysis data:
 ### Function-Specific Filtering (Step 3)
 
 Functional failures are automatically filtered to show only those related to the currently selected function. This helps:
+
 - Focus on relevant failures
 - Avoid confusion with failures from other functions
 - Maintain clarity in complex multi-function assets
@@ -331,6 +366,7 @@ Functional failures are automatically filtered to show only those related to the
 ### Dynamic Component Lists (Step 4)
 
 The component dropdown in Step 4 automatically reflects components defined in Step 1 for the selected asset. Ensures:
+
 - Consistency across analysis steps
 - Prevention of orphaned failure modes
 - Accurate asset-specific data

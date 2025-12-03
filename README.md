@@ -149,16 +149,22 @@ Choose appropriate maintenance strategy:
 
 **Proactive Tasks:**
 - **CBM** (Condition Based): Monitor condition, intervene when threshold reached
-- **FTM** (Fixed Time): Replace/overhaul at fixed intervals
+- **FTM** (Fixed Time): Replace/overhaul at fixed intervals, with separate Useful Life and MTBF tracking
 - **FF** (Failure Finding): Test hidden failures periodically
 
 **Default Actions:**
 - **Redesign**: One-off change to equipment/process/procedures
-- **OTF** (Operate to Failure): Accept failure, repair when occurs
+- **OTF** (Operate to Failure): Accept failure, repair when occurs (not available for Safety/Environmental consequences)
 
 Each task must be:
 1. Technically feasible (can it be done?)
 2. Worth doing (does it address consequences cost-effectively?)
+
+**Task-Specific Features:**
+- **Cost Analysis**: For Operational/Non-operational consequences, enter both Cost of Task and Cost of Failure (Labour, Parts, Other)
+- **Risk Assessment**: For FTM and Redesign tasks with Safety/Environmental consequences, assess post-implementation risk levels
+- **Task Management**: View, update, or delete tasks using the comprehensive table with horizontal scrolling
+- **Smart Controls**: OTF option automatically excluded for safety-critical failures
 
 ### Stage 3: Implementation
 

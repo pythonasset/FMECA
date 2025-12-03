@@ -102,11 +102,23 @@ The application will open automatically in your browser at `http://localhost:850
    - Review all consequence categories in a table
    - Select any row to update or delete categorization
 
-#### Step 7: Task Selection (2 min)
+#### Step 7: Task Selection (3-5 min)
 
 1. Choose appropriate maintenance strategy
-2. System provides options based on consequence
-3. Validate task is feasible and worth doing
+2. System provides options based on consequence (OTF excluded for Safety/Environmental)
+3. Enter task-specific details:
+   - **FTM**: Separate Useful Life and MTBF fields
+   - **Redesign**: Select type of redesign
+4. For Operational/Non-operational consequences:
+   - Enter Cost of Task (Labour, Parts, Other)
+   - Enter Cost of Failure (Labour, Parts, Other)
+5. For Safety/Environmental consequences with FTM or Redesign:
+   - Assess post-implementation risk levels
+   - Risk = Consequence Severity + Likelihood
+6. Validate task is feasible and worth doing
+7. View/Update/Delete tasks:
+   - Browse all tasks in comprehensive table with horizontal scrolling
+   - Select any task to update or delete
 
 **Repeat Stage 2 for each asset in your project**
 
@@ -143,6 +155,9 @@ The application will open automatically in your browser at `http://localhost:850
 ✅ **Be Specific**: Use measurable performance standards
 ✅ **Focus on Real Failures**: Only analyze likely failure modes
 ✅ **Table-Based UI**: Use radio button selection to easily view/update/delete any analysis item
+✅ **Cost Tracking**: Enter both task and failure costs for operational consequences
+✅ **Risk Assessment**: Use post-implementation risk sliders for safety-critical tasks
+✅ **Smart Validation**: System prevents OTF selection for safety/environmental failures
 ✅ **Save Often**: Export project as JSON regularly
 ✅ **Consistent Approach**: Apply same rigor across all assets
 

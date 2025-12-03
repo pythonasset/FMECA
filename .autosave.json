@@ -80,7 +80,7 @@
             "repair_time": 4.0,
             "downtime": 8.0
           },
-          "consequence_category": "Evident (Safety/Environmental)",
+          "consequence_category": "Evident (Operational)",
           "risk_assessment": {
             "consequence": "4-High",
             "likelihood": "4-Likely",
@@ -88,12 +88,19 @@
             "risk_level": "High"
           },
           "management_task": {
-            "task_type": "Redesign",
-            "description": "",
+            "task_type": "FTM - Fixed Time Maintenance",
+            "description": "Change Seals on Gear box every 3.0 years",
             "technically_feasible": "Yes",
             "worth_doing": "Yes",
-            "justification": "",
-            "cost": 0.0
+            "justification": "Risk reduced to an acceptable level",
+            "cost": 0.0,
+            "failure_cost": 0.0,
+            "post_risk_assessment": {
+              "consequence": "3-Moderate",
+              "likelihood": "2-Unlikely",
+              "risk_score": 5,
+              "risk_level": "Low"
+            }
           }
         },
         {
@@ -127,6 +134,16 @@
           "task_type": "Redesign",
           "task_description": "",
           "frequency": "",
+          "cost": 0.0
+        },
+        {
+          "failure_mode_id": "FM-FF-1.1-1",
+          "component": "Pump Set 1",
+          "failure_mode": "Blockage due to debris",
+          "consequence": "Evident (Safety/Environmental)",
+          "task_type": "FTM - Fixed Time Maintenance",
+          "task_description": "Change Seals on Gear box every 3.0 years",
+          "frequency": "Change Seals on Gear box every 3.0 years",
           "cost": 0.0
         }
       ]
@@ -235,7 +252,7 @@
         "repair_time": 4.0,
         "downtime": 8.0
       },
-      "consequence_category": "Evident (Safety/Environmental)",
+      "consequence_category": "Evident (Operational)",
       "risk_assessment": {
         "consequence": "4-High",
         "likelihood": "4-Likely",
@@ -243,12 +260,19 @@
         "risk_level": "High"
       },
       "management_task": {
-        "task_type": "Redesign",
-        "description": "",
+        "task_type": "FTM - Fixed Time Maintenance",
+        "description": "Change Seals on Gear box every 3.0 years",
         "technically_feasible": "Yes",
         "worth_doing": "Yes",
-        "justification": "",
-        "cost": 0.0
+        "justification": "Risk reduced to an acceptable level",
+        "cost": 0.0,
+        "failure_cost": 0.0,
+        "post_risk_assessment": {
+          "consequence": "3-Moderate",
+          "likelihood": "2-Unlikely",
+          "risk_score": 5,
+          "risk_level": "Low"
+        }
       }
     },
     {
@@ -283,8 +307,18 @@
       "task_description": "",
       "frequency": "",
       "cost": 0.0
+    },
+    {
+      "failure_mode_id": "FM-FF-1.1-1",
+      "component": "Pump Set 1",
+      "failure_mode": "Blockage due to debris",
+      "consequence": "Evident (Safety/Environmental)",
+      "task_type": "FTM - Fixed Time Maintenance",
+      "task_description": "Change Seals on Gear box every 3.0 years",
+      "frequency": "Change Seals on Gear box every 3.0 years",
+      "cost": 0.0
     }
   ],
-  "current_stage": 1,
-  "autosave_date": "2025-12-02T17:01:26.153647"
+  "current_stage": 2,
+  "autosave_date": "2025-12-03T17:03:31.289066"
 }

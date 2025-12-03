@@ -2389,18 +2389,31 @@ def stage_2_analysis():
             st.markdown("---")
             st.markdown("### Task Selection Decision")
             
+            # Build task type options based on consequence category
+            consequence_cat = current_mode.get('consequence_category', '')
+            task_type_options = ["Select...", 
+                                 "CBM - Condition Based Maintenance", 
+                                 "FTM - Fixed Time Maintenance",
+                                 "FF - Failure Finding",
+                                 "Redesign"]
+            
+            # Only add OTF if consequence is NOT Safety/Environmental
+            if "Safety" not in consequence_cat and "Environmental" not in consequence_cat:
+                task_type_options.append("OTF - Operate to Failure")
+            
             task_type = st.selectbox(
                 "Select Task Type",
-                ["Select...", 
-                 "CBM - Condition Based Maintenance", 
-                 "FTM - Fixed Time Maintenance",
-                 "FF - Failure Finding",
-                 "Redesign",
-                 "OTF - Operate to Failure"]
+                task_type_options
             )
             
             if task_type != "Select...":
                 st.markdown(f"#### {task_type}")
+                
+                # Initialize post-risk assessment variables
+                post_consequence_rating = None
+                post_likelihood_rating = None
+                post_risk_score = None
+                post_risk_level = None
                 
                 # Task-specific inputs
                 if "CBM" in task_type:
@@ -2431,10 +2444,57 @@ def stage_2_analysis():
                     with col2:
                         interval_unit = st.selectbox("Interval Unit", 
                                                     ["hours", "days", "weeks", "months", "years", "operating hours", "cycles"])
-                        useful_life = st.number_input("Useful Life / MTBF", min_value=0.0,
-                                                     help="Mean time between failures")
+                        useful_life = st.number_input("Useful Life", min_value=0.0)
+                        mtbf = st.number_input("MTBF", min_value=0.0,
+                                             help="Mean time between failures")
                     
                     task_description = f"{task_action} every {interval_value} {interval_unit}"
+                    
+                    # Add risk assessment slider for Safety/Environmental consequences
+                    consequence_cat = current_mode.get('consequence_category', '')
+                    if "Safety" in consequence_cat or "Environmental" in consequence_cat:
+                        st.markdown("---")
+                        st.markdown("#### Risk after task implementation")
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            post_consequence_rating = st.select_slider(
+                                "Consequence Severity",
+                                options=["1-Insignificant", "2-Minor", "3-Moderate", "4-High", "5-Catastrophic"],
+                                value="3-Moderate",
+                                key="ftm_post_consequence"
+                            )
+                        
+                        with col2:
+                            post_likelihood_rating = st.select_slider(
+                                "Likelihood",
+                                options=["1-Rare", "2-Unlikely", "3-Occasional", "4-Likely", "5-Almost Certain"],
+                                value="3-Occasional",
+                                key="ftm_post_likelihood"
+                            )
+                        
+                        with col3:
+                            # Calculate risk score
+                            post_cons_num = int(post_consequence_rating[0])
+                            post_like_num = int(post_likelihood_rating[0])
+                            post_risk_score = post_cons_num + post_like_num
+                            
+                            if post_risk_score >= 8:
+                                post_risk_level = "High"
+                                post_risk_color = "red"
+                            elif post_risk_score >= 6:
+                                post_risk_level = "Medium"
+                                post_risk_color = "orange"
+                            else:
+                                post_risk_level = "Low"
+                                post_risk_color = "green"
+                            
+                            st.markdown(f"""
+                            <div style="background-color: {post_risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Risk Level: {post_risk_level}</strong><br>
+                            Score: {post_risk_score}
+                            </div>
+                            """, unsafe_allow_html=True)
                 
                 elif "FF" in task_type:
                     st.info("**FF Task:** Periodically check if hidden failure has occurred")
@@ -2457,6 +2517,52 @@ def stage_2_analysis():
                                            ["Equipment modification", "Process change", "Procedure update", "Training"])
                     task_description = st.text_area("Describe the Redesign",
                                                    help="What specific change will be made?")
+                    
+                    # Add risk assessment slider for Safety/Environmental consequences
+                    consequence_cat = current_mode.get('consequence_category', '')
+                    if "Safety" in consequence_cat or "Environmental" in consequence_cat:
+                        st.markdown("---")
+                        st.markdown("#### Risk after task implementation")
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            post_consequence_rating = st.select_slider(
+                                "Consequence Severity",
+                                options=["1-Insignificant", "2-Minor", "3-Moderate", "4-High", "5-Catastrophic"],
+                                value="3-Moderate",
+                                key="redesign_post_consequence"
+                            )
+                        
+                        with col2:
+                            post_likelihood_rating = st.select_slider(
+                                "Likelihood",
+                                options=["1-Rare", "2-Unlikely", "3-Occasional", "4-Likely", "5-Almost Certain"],
+                                value="3-Occasional",
+                                key="redesign_post_likelihood"
+                            )
+                        
+                        with col3:
+                            # Calculate risk score
+                            post_cons_num = int(post_consequence_rating[0])
+                            post_like_num = int(post_likelihood_rating[0])
+                            post_risk_score = post_cons_num + post_like_num
+                            
+                            if post_risk_score >= 8:
+                                post_risk_level = "High"
+                                post_risk_color = "red"
+                            elif post_risk_score >= 6:
+                                post_risk_level = "Medium"
+                                post_risk_color = "orange"
+                            else:
+                                post_risk_level = "Low"
+                                post_risk_color = "green"
+                            
+                            st.markdown(f"""
+                            <div style="background-color: {post_risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong>Risk Level: {post_risk_level}</strong><br>
+                            Score: {post_risk_score}
+                            </div>
+                            """, unsafe_allow_html=True)
                 
                 else:  # OTF
                     st.info("**Operate to Failure:** Conscious decision to let failure occur and repair when it does")
@@ -2483,18 +2589,46 @@ def stage_2_analysis():
                 justification = st.text_area("Justification",
                                            help="Explain why this task is feasible and worth doing")
                 
-                # Cost estimate
-                st.markdown("### Cost Estimate")
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    labour_cost = st.number_input("Labour Cost ($)", min_value=0.0)
-                with col2:
-                    parts_cost = st.number_input("Parts Cost ($)", min_value=0.0)
-                with col3:
-                    other_cost = st.number_input("Other Cost ($)", min_value=0.0)
+                # Check if consequence is operational or non-operational AND task is not OTF
+                consequence_cat = current_mode.get('consequence_category', '')
+                show_cost_fields = ('Operational' in consequence_cat or 'Non-operational' in consequence_cat) and 'OTF' not in task_type
                 
-                total_cost = labour_cost + parts_cost + other_cost
-                st.markdown(f"**Total Task Cost:** ${total_cost:,.2f}")
+                # Initialize cost variables
+                labour_cost = 0.0
+                parts_cost = 0.0
+                other_cost = 0.0
+                failure_labour_cost = 0.0
+                failure_parts_cost = 0.0
+                failure_other_cost = 0.0
+                total_cost = 0.0
+                total_failure_cost = 0.0
+                
+                if show_cost_fields:
+                    # Cost of Task
+                    st.markdown("### Cost of Task")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        labour_cost = st.number_input("Labour Cost ($)", min_value=0.0, key="task_labour")
+                    with col2:
+                        parts_cost = st.number_input("Parts Cost ($)", min_value=0.0, key="task_parts")
+                    with col3:
+                        other_cost = st.number_input("Other Cost ($)", min_value=0.0, key="task_other")
+                    
+                    total_cost = labour_cost + parts_cost + other_cost
+                    st.markdown(f"**Total Task Cost:** ${total_cost:,.2f}")
+                    
+                    # Cost of Failure
+                    st.markdown("### Cost of Failure")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        failure_labour_cost = st.number_input("Labour Cost ($)", min_value=0.0, key="failure_labour")
+                    with col2:
+                        failure_parts_cost = st.number_input("Parts Cost ($)", min_value=0.0, key="failure_parts")
+                    with col3:
+                        failure_other_cost = st.number_input("Other Cost ($)", min_value=0.0, key="failure_other")
+                    
+                    total_failure_cost = failure_labour_cost + failure_parts_cost + failure_other_cost
+                    st.markdown(f"**Total Failure Cost:** ${total_failure_cost:,.2f}")
                 
                 if st.button("💾 Save Failure Management Task"):
                     if technically_feasible == "Yes" and worth_doing == "Yes":
@@ -2504,8 +2638,18 @@ def stage_2_analysis():
                             'technically_feasible': technically_feasible,
                             'worth_doing': worth_doing,
                             'justification': justification,
-                            'cost': total_cost
+                            'cost': total_cost,
+                            'failure_cost': total_failure_cost
                         }
+                        
+                        # Add post-implementation risk assessment for FTM and Redesign Safety/Environmental tasks
+                        if ("FTM" in task_type or "Redesign" in task_type) and ("Safety" in current_mode.get('consequence_category', '') or "Environmental" in current_mode.get('consequence_category', '')):
+                            task['post_risk_assessment'] = {
+                                'consequence': post_consequence_rating,
+                                'likelihood': post_likelihood_rating,
+                                'risk_score': post_risk_score,
+                                'risk_level': post_risk_level
+                            }
                         
                         # Add to failure mode
                         for mode in st.session_state.failure_modes:
@@ -2529,6 +2673,311 @@ def stage_2_analysis():
                                 st.rerun()
                     else:
                         st.error("Task must be both technically feasible and worth doing!")
+            
+            # Display table with selection for failure modes with tasks
+            modes_with_tasks = [m for m in st.session_state.failure_modes if 'management_task' in m]
+            
+            if modes_with_tasks:
+                st.markdown("---")
+                st.subheader(f"View, Update or Delete Tasks")
+                
+                # Create selection interface using radio buttons
+                task_options = ["None"] + [f"{m['id']}: {m['component']} - {m['description']}" for m in modes_with_tasks]
+                selected_task = st.radio(
+                    "Select a Failure Mode to View, Update or Delete its Task:",
+                    task_options,
+                    key="task_selection"
+                )
+                
+                # Display table of failure modes with tasks
+                tasks_display = []
+                for m in modes_with_tasks:
+                    task = m.get('management_task', {})
+                    post_risk = task.get('post_risk_assessment', {})
+                    
+                    task_data = {
+                        'Failure Mode ID': m['id'],
+                        'Component': m['component'],
+                        'Description': m['description'],
+                        'Consequence': m.get('consequence_category', 'N/A'),
+                        'Task Type': task.get('task_type', 'N/A'),
+                        'Task Description': task.get('description', 'N/A'),
+                        'Technically Feasible': task.get('technically_feasible', 'N/A'),
+                        'Worth Doing': task.get('worth_doing', 'N/A'),
+                        'Justification': task.get('justification', 'N/A'),
+                        'Task Cost': f"${task.get('cost', 0):,.2f}",
+                        'Failure Cost': f"${task.get('failure_cost', 0):,.2f}"
+                    }
+                    
+                    # Add post-risk assessment data if available
+                    if post_risk:
+                        task_data['Post-Risk Consequence'] = post_risk.get('consequence', 'N/A')
+                        task_data['Post-Risk Likelihood'] = post_risk.get('likelihood', 'N/A')
+                        task_data['Post-Risk Level'] = post_risk.get('risk_level', 'N/A')
+                        task_data['Post-Risk Score'] = post_risk.get('risk_score', 'N/A')
+                    else:
+                        task_data['Post-Risk Consequence'] = 'N/A'
+                        task_data['Post-Risk Likelihood'] = 'N/A'
+                        task_data['Post-Risk Level'] = 'N/A'
+                        task_data['Post-Risk Score'] = 'N/A'
+                    
+                    tasks_display.append(task_data)
+                
+                tasks_df = pd.DataFrame(tasks_display)
+                st.dataframe(tasks_df, use_container_width=False, height=400)
+                
+                # Show Update/Delete options if a task is selected
+                if selected_task != "None":
+                    selected_task_mode_id = selected_task.split(":")[0]
+                    selected_task_mode = next(m for m in modes_with_tasks if m['id'] == selected_task_mode_id)
+                    task_mode_idx = next(i for i, m in enumerate(st.session_state.failure_modes) if m['id'] == selected_task_mode_id)
+                    
+                    # Display full task details
+                    st.markdown("---")
+                    st.markdown(f"### Task for {selected_task_mode_id}")
+                    
+                    task = selected_task_mode.get('management_task', {})
+                    st.markdown(f"**Task Type:** {task.get('task_type', 'N/A')}")
+                    st.markdown(f"**Description:** {task.get('description', 'N/A')}")
+                    st.markdown(f"**Technically Feasible:** {task.get('technically_feasible', 'N/A')}")
+                    st.markdown(f"**Worth Doing:** {task.get('worth_doing', 'N/A')}")
+                    st.markdown(f"**Justification:** {task.get('justification', 'N/A')}")
+                    st.markdown(f"**Cost:** ${task.get('cost', 0):,.2f}")
+                    st.markdown(f"**Failure Cost:** ${task.get('failure_cost', 0):,.2f}")
+                    
+                    if 'post_risk_assessment' in task:
+                        st.markdown("**Post-Implementation Risk Assessment:**")
+                        post_risk = task['post_risk_assessment']
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.markdown(f"**Consequence:** {post_risk.get('consequence', 'N/A')}")
+                        with col2:
+                            st.markdown(f"**Likelihood:** {post_risk.get('likelihood', 'N/A')}")
+                        with col3:
+                            st.markdown(f"**Risk Level:** {post_risk.get('risk_level', 'N/A')} (Score: {post_risk.get('risk_score', 0)})")
+                    
+                    # Update Section
+                    if not st.session_state.get('editing_task', False):
+                        col_action1, col_action2 = st.columns(2)
+                        with col_action1:
+                            if st.button("✏️ Update Selected", use_container_width=True, key="update_task_btn"):
+                                st.session_state.editing_task = True
+                                st.rerun()
+                        with col_action2:
+                            if st.button("🗑️ Delete Selected", use_container_width=True, key="delete_task_btn"):
+                                st.session_state.deleting_task = True
+                                st.rerun()
+                    
+                    # Update Form
+                    if st.session_state.get('editing_task', False):
+                        st.markdown("---")
+                        st.markdown("### ✏️ Update Task")
+                        
+                        # Get current task values
+                        current_task = selected_task_mode.get('management_task', {})
+                        current_task_type = current_task.get('task_type', 'Select...')
+                        
+                        # Build task type options based on consequence category
+                        consequence_cat = selected_task_mode.get('consequence_category', '')
+                        update_task_type_options = ["Select...", 
+                                                    "CBM - Condition Based Maintenance", 
+                                                    "FTM - Fixed Time Maintenance",
+                                                    "FF - Failure Finding",
+                                                    "Redesign"]
+                        
+                        # Only add OTF if consequence is NOT Safety/Environmental
+                        if "Safety" not in consequence_cat and "Environmental" not in consequence_cat:
+                            update_task_type_options.append("OTF - Operate to Failure")
+                        
+                        # Calculate index for current task type
+                        if current_task_type in update_task_type_options:
+                            current_index = update_task_type_options.index(current_task_type)
+                        else:
+                            current_index = 0
+                        
+                        # Task type selection
+                        updated_task_type = st.selectbox(
+                            "Select Task Type",
+                            update_task_type_options,
+                            index=current_index,
+                            key="update_task_type"
+                        )
+                        
+                        if updated_task_type != "Select...":
+                            updated_task_description = st.text_area(
+                                "Task Description",
+                                value=current_task.get('description', ''),
+                                key="update_task_description"
+                            )
+                            
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                updated_technically_feasible = st.radio(
+                                    "Technically Feasible?",
+                                    ["Yes", "No"],
+                                    index=0 if current_task.get('technically_feasible') == "Yes" else 1,
+                                    key="update_technically_feasible"
+                                )
+                            with col2:
+                                updated_worth_doing = st.radio(
+                                    "Worth Doing?",
+                                    ["Yes", "No"],
+                                    index=0 if current_task.get('worth_doing') == "Yes" else 1,
+                                    key="update_worth_doing"
+                                )
+                            
+                            updated_justification = st.text_area(
+                                "Justification",
+                                value=current_task.get('justification', ''),
+                                key="update_justification"
+                            )
+                            
+                            # Check if consequence is operational or non-operational AND task is not OTF
+                            consequence_cat = selected_task_mode.get('consequence_category', '')
+                            show_cost_fields = ('Operational' in consequence_cat or 'Non-operational' in consequence_cat) and 'OTF' not in updated_task_type
+                            
+                            # Initialize cost variables
+                            updated_labour_cost = 0.0
+                            updated_parts_cost = 0.0
+                            updated_other_cost = 0.0
+                            updated_failure_labour_cost = 0.0
+                            updated_failure_parts_cost = 0.0
+                            updated_failure_other_cost = 0.0
+                            updated_total_cost = 0.0
+                            updated_total_failure_cost = 0.0
+                            
+                            if show_cost_fields:
+                                st.markdown("### Cost of Task")
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    updated_labour_cost = st.number_input("Labour Cost ($)", min_value=0.0, value=float(current_task.get('cost', 0)), key="update_task_labour")
+                                with col2:
+                                    updated_parts_cost = st.number_input("Parts Cost ($)", min_value=0.0, key="update_task_parts")
+                                with col3:
+                                    updated_other_cost = st.number_input("Other Cost ($)", min_value=0.0, key="update_task_other")
+                                
+                                updated_total_cost = updated_labour_cost + updated_parts_cost + updated_other_cost
+                                st.markdown(f"**Total Task Cost:** ${updated_total_cost:,.2f}")
+                                
+                                st.markdown("### Cost of Failure")
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    updated_failure_labour_cost = st.number_input("Labour Cost ($)", min_value=0.0, value=float(current_task.get('failure_cost', 0)), key="update_failure_labour")
+                                with col2:
+                                    updated_failure_parts_cost = st.number_input("Parts Cost ($)", min_value=0.0, key="update_failure_parts")
+                                with col3:
+                                    updated_failure_other_cost = st.number_input("Other Cost ($)", min_value=0.0, key="update_failure_other")
+                                
+                                updated_total_failure_cost = updated_failure_labour_cost + updated_failure_parts_cost + updated_failure_other_cost
+                                st.markdown(f"**Total Failure Cost:** ${updated_total_failure_cost:,.2f}")
+                            
+                            # Risk assessment for FTM and Redesign Safety/Environmental tasks
+                            updated_post_consequence_rating = None
+                            updated_post_likelihood_rating = None
+                            updated_post_risk_score = None
+                            updated_post_risk_level = None
+                            
+                            if ("FTM" in updated_task_type or "Redesign" in updated_task_type) and ("Safety" in consequence_cat or "Environmental" in consequence_cat):
+                                st.markdown("---")
+                                st.markdown("#### Risk after task implementation")
+                                col1, col2, col3 = st.columns(3)
+                                
+                                # Get current post-risk values
+                                current_post_risk = current_task.get('post_risk_assessment', {})
+                                current_post_cons = current_post_risk.get('consequence', '3-Moderate')
+                                current_post_like = current_post_risk.get('likelihood', '3-Occasional')
+                                
+                                with col1:
+                                    updated_post_consequence_rating = st.select_slider(
+                                        "Consequence Severity",
+                                        options=["1-Insignificant", "2-Minor", "3-Moderate", "4-High", "5-Catastrophic"],
+                                        value=current_post_cons,
+                                        key="update_ftm_post_consequence"
+                                    )
+                                
+                                with col2:
+                                    updated_post_likelihood_rating = st.select_slider(
+                                        "Likelihood",
+                                        options=["1-Rare", "2-Unlikely", "3-Occasional", "4-Likely", "5-Almost Certain"],
+                                        value=current_post_like,
+                                        key="update_ftm_post_likelihood"
+                                    )
+                                
+                                with col3:
+                                    # Calculate risk score
+                                    updated_post_cons_num = int(updated_post_consequence_rating[0])
+                                    updated_post_like_num = int(updated_post_likelihood_rating[0])
+                                    updated_post_risk_score = updated_post_cons_num + updated_post_like_num
+                                    
+                                    if updated_post_risk_score >= 8:
+                                        updated_post_risk_level = "High"
+                                        updated_post_risk_color = "red"
+                                    elif updated_post_risk_score >= 6:
+                                        updated_post_risk_level = "Medium"
+                                        updated_post_risk_color = "orange"
+                                    else:
+                                        updated_post_risk_level = "Low"
+                                        updated_post_risk_color = "green"
+                                    
+                                    st.markdown(f"""
+                                    <div style="background-color: {updated_post_risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
+                                    <strong>Risk Level: {updated_post_risk_level}</strong><br>
+                                    Score: {updated_post_risk_score}
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                            
+                            col_update1, col_update2 = st.columns(2)
+                            with col_update1:
+                                if st.button("💾 Save Update", type="primary", use_container_width=True, key="save_task_update"):
+                                    updated_task = {
+                                        'task_type': updated_task_type,
+                                        'description': updated_task_description,
+                                        'technically_feasible': updated_technically_feasible,
+                                        'worth_doing': updated_worth_doing,
+                                        'justification': updated_justification,
+                                        'cost': updated_total_cost,
+                                        'failure_cost': updated_total_failure_cost
+                                    }
+                                    
+                                    # Add post-implementation risk assessment if applicable
+                                    if ("FTM" in updated_task_type or "Redesign" in updated_task_type) and ("Safety" in consequence_cat or "Environmental" in consequence_cat):
+                                        updated_task['post_risk_assessment'] = {
+                                            'consequence': updated_post_consequence_rating,
+                                            'likelihood': updated_post_likelihood_rating,
+                                            'risk_score': updated_post_risk_score,
+                                            'risk_level': updated_post_risk_level
+                                        }
+                                    
+                                    st.session_state.failure_modes[task_mode_idx]['management_task'] = updated_task
+                                    st.session_state.editing_task = False
+                                    save_asset_analysis_data()
+                                    st.success(f"✅ Task for {selected_task_mode_id} updated!")
+                                    st.rerun()
+                            with col_update2:
+                                if st.button("❌ Cancel Update", use_container_width=True, key="cancel_task_update"):
+                                    st.session_state.editing_task = False
+                                    st.rerun()
+                    
+                    # Delete Confirmation
+                    if st.session_state.get('deleting_task', False):
+                        st.markdown("---")
+                        st.markdown("### 🗑️ Delete Task")
+                        st.warning(f"⚠️ Warning: This will delete the task for {selected_task_mode_id}!")
+                        
+                        col_del1, col_del2 = st.columns(2)
+                        with col_del1:
+                            if st.button("🗑️ Confirm Delete", type="primary", use_container_width=True, key="confirm_task_delete"):
+                                # Delete the task
+                                if 'management_task' in st.session_state.failure_modes[task_mode_idx]:
+                                    del st.session_state.failure_modes[task_mode_idx]['management_task']
+                                st.session_state.deleting_task = False
+                                save_asset_analysis_data()
+                                st.success(f"✅ Task for {selected_task_mode_id} deleted!")
+                                st.rerun()
+                        with col_del2:
+                            if st.button("❌ Cancel Delete", use_container_width=True, key="cancel_task_delete"):
+                                st.session_state.deleting_task = False
+                                st.rerun()
 
 # Stage 3: Implementation
 def stage_3_implementation():
