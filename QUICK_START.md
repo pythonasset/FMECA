@@ -5,7 +5,7 @@
 ### Step 1: Install Dependencies
 
 ```bash
-pip install streamlit pandas
+pip install streamlit pandas openpyxl
 ```
 
 Or use the requirements file:
@@ -13,6 +13,8 @@ Or use the requirements file:
 ```bash
 pip install -r requirements.txt
 ```
+
+**Note:** `openpyxl` is required for Excel export functionality.
 
 ### Step 2: Run the Application
 
@@ -105,9 +107,12 @@ The application will open automatically in your browser at `http://localhost:850
 #### Step 7: Task Selection (3-5 min)
 
 1. Choose appropriate maintenance strategy
-2. System provides options based on consequence (OTF excluded for Safety/Environmental)
+2. System provides options based on consequence:
+   - **FF (Failure Finding)**: Only available for Hidden consequences
+   - **OTF**: Excluded for Safety/Environmental consequences
 3. Enter task-specific details:
    - **FTM**: Separate Useful Life and MTBF fields
+   - **FF**: Select required availability (99.99% to 95%), system calculates FFI automatically
    - **Redesign**: Select type of redesign
 4. For Operational/Non-operational consequences:
    - Enter Cost of Task (Labour, Parts, Other)
@@ -142,9 +147,10 @@ The application will open automatically in your browser at `http://localhost:850
 3. Check consequence breakdowns
 
 #### Export Data Tab
-1. **Export Complete Project** (JSON) - includes all assets
-2. **Export Single Asset** (CSV) - for specific asset results
-3. JSON format preserves complete project for future updates
+1. **Export Complete Project (Excel)** - includes all assets with complete FMECA data
+2. **Export Single Asset (Excel)** - for specific asset results with all analysis details
+3. Import JSON files to restore complete project data
+4. Excel format provides better data analysis and filtering capabilities
 
 ## Tips for Success
 
@@ -158,7 +164,7 @@ The application will open automatically in your browser at `http://localhost:850
 ✅ **Cost Tracking**: Enter both task and failure costs for operational consequences
 ✅ **Risk Assessment**: Use post-implementation risk sliders for safety-critical tasks
 ✅ **Smart Validation**: System prevents OTF selection for safety/environmental failures
-✅ **Save Often**: Export project as JSON regularly
+✅ **Save Often**: Export project as Excel regularly for comprehensive backup
 ✅ **Consistent Approach**: Apply same rigor across all assets
 
 ## Common Workflows

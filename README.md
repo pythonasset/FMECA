@@ -48,6 +48,7 @@ This application implements the complete RCM methodology based on the Murrumbidg
 ### Prerequisites
 - Python 3.8 or higher
 - pip package manager
+- openpyxl (for Excel export functionality)
 
 ### Setup
 
@@ -150,7 +151,7 @@ Choose appropriate maintenance strategy:
 **Proactive Tasks:**
 - **CBM** (Condition Based): Monitor condition, intervene when threshold reached
 - **FTM** (Fixed Time): Replace/overhaul at fixed intervals, with separate Useful Life and MTBF tracking
-- **FF** (Failure Finding): Test hidden failures periodically
+- **FF** (Failure Finding): Test hidden failures periodically using availability-based FFI calculation (only available for Hidden consequence categories)
 
 **Default Actions:**
 - **Redesign**: One-off change to equipment/process/procedures
@@ -189,15 +190,17 @@ Generate project-level and asset-level reports:
 #### Asset Reports Tab
 - **Select an Asset**: Choose which asset to view detailed reports for
 - Individual asset analysis statistics
-- Detailed FMECA tables per asset
+- Detailed FMECA tables per asset with horizontal scrollbar for easy navigation
+- Complete analysis data including effects, consequences, risk assessments, and tasks
 - Consequence breakdowns
 - Task type analysis
 
 #### Export Data Tab
-- **Export Complete Project**: Download all assets as JSON
-- **Export Single Asset**: Download individual asset analysis as CSV
-- **Import Project**: Upload previously saved projects
+- **Export Complete Project (Excel)**: Download all assets with complete FMECA data as Excel file (.xlsx)
+- **Export Single Asset (Excel)**: Download individual asset analysis with complete data as Excel file (.xlsx)
+- **Import Project**: Upload previously saved JSON project files
 - Maintains all asset data and analyses
+- Excel exports include all failure modes, effects, consequences, risk assessments, and management tasks
 
 ## RCM Decision Logic
 
@@ -244,9 +247,10 @@ The application uses a project-based data model with automatic saving:
 4. **Auto-save**: Automatic session saving during active use
 
 **Recommended Workflow:**
-- Export project JSON regularly for backup
-- Use asset CSV for sharing specific results
+- Export project Excel files regularly for comprehensive data backup
+- Use single asset Excel for sharing specific results
 - Import project JSON to resume work across sessions
+- Excel format provides better data analysis and filtering capabilities
 
 ## Tips for Effective Analysis
 

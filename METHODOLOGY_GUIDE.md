@@ -30,6 +30,8 @@
 │                          [Risk assessment for safety]           │
 │                          [Table-based view/update/delete]       │
 │  Step 7: Task Selection  → How can we manage the failure?       │
+│                          [FF only for Hidden consequences]      │
+│                          [Availability-based FFI calculation]   │
 │                          [Cost of Task & Cost of Failure]       │
 │                          [Post-implementation risk for FTM/     │
 │                           Redesign with Safety/Environmental]   │
@@ -52,8 +54,9 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │              STAGE 4: REPORTS & EXPORT                          │
 │  • Project-Level Summary (All Assets)                           │
-│  • Asset-Level Detailed Reports                                 │
-│  • Export Complete Project or Individual Assets                 │
+│  • Asset-Level Detailed Reports (with horizontal scrolling)     │
+│  • Export Complete Project (Excel) with all FMECA data          │
+│  • Export Individual Assets (Excel) with complete analysis      │
 │  • Monitor Performance Across Project                           │
 │  • Review & Update Analysis                                     │
 └─────────────────────────────────────────────────────────────────┘
@@ -172,16 +175,31 @@ Then apply Task Selection Logic...
 
 ### FF - Failure Finding
 
-**When:** Hidden failures (protective devices)
-**How:** Periodically test if still functional
-**Example:** "Test pressure relief valve monthly"
+**When:** Hidden failures (protective devices only)
+**How:** Periodically test if still functional using availability-based FFI calculation
+**Example:** "Test pressure relief valve every 73 days (based on 99% availability)"
+
+**New Informal Approach for Non-Severe Consequences:**
+
+1. Determine MTBF of Protective Device (years)
+2. Select required Availability for Protective Device:
+   - 99.99% → FFI = 0.02% of MTBF
+   - 99.95% → FFI = 0.1% of MTBF
+   - 99.9% → FFI = 0.2% of MTBF
+   - 99.5% → FFI = 1% of MTBF
+   - 99% → FFI = 2% of MTBF
+   - 98% → FFI = 4% of MTBF
+   - 95% → FFI = 10% of MTBF
+3. System automatically calculates FFI in days
 
 **Requirements:**
 
-- Function is hidden
+- Function is hidden (consequence category must contain "Hidden")
 - Test doesn't increase risk
 - Practical to test at required frequency
 - Reduces multiple failure risk
+
+**Availability:** Only appears in task selection dropdown when consequence is categorized as Hidden
 
 ### Redesign
 
