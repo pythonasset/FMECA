@@ -2394,8 +2394,11 @@ def stage_2_analysis():
             task_type_options = ["Select...", 
                                  "CBM - Condition Based Maintenance", 
                                  "FTM - Fixed Time Maintenance",
-                                 "FF - Failure Finding",
                                  "Redesign"]
+            
+            # Only add FF if consequence is Hidden
+            if "Hidden" in consequence_cat:
+                task_type_options.insert(3, "FF - Failure Finding")
             
             # Only add OTF if consequence is NOT Safety/Environmental
             if "Safety" not in consequence_cat and "Environmental" not in consequence_cat:
@@ -2497,18 +2500,55 @@ def stage_2_analysis():
                             """, unsafe_allow_html=True)
                 
                 elif "FF" in task_type:
-                    st.info("**FF Task:** Periodically check if hidden failure has occurred")
+                    st.info("**FF Task:** A more informal approach to setting the FFI for Consequences that are not severe")
+                    
+                    st.markdown("""
+                    **This approach involves:**
+                    - Determining the Mean Time Between Failures (MTBF) of the Protective Device (Years)
+                    - Deciding on a required Availability for the Protective Device (ratio of time it is functional to the total time required (%))
+                    - Using a table to determine the FFI as a % of the MTBF of the Protective Device
+                    """)
                     
                     col1, col2 = st.columns(2)
                     with col1:
                         test_method = st.text_area("Test Method",
                                                   help="How to check if protective device is functional")
-                        ff_interval = st.number_input("Failure Finding Interval (days)", min_value=0.0)
+                        mtbf_protective = st.number_input("MTBF of Protective Device (years)", min_value=0.0,
+                                                         help="Mean Time Between Failures of the protective device in years")
                     with col2:
-                        mtbf_protective = st.number_input("MTBF of Protective Device (years)", min_value=0.0)
-                        mtbf_protected = st.number_input("MTBF of Protected Device (years)", min_value=0.0)
+                        # Availability lookup table
+                        availability_options = {
+                            "99.99%": 0.0002,  # 0.02% FFI
+                            "99.95%": 0.001,   # 0.1% FFI
+                            "99.9%": 0.002,    # 0.2% FFI
+                            "99.5%": 0.01,     # 1% FFI
+                            "99%": 0.02,       # 2% FFI
+                            "98%": 0.04,       # 4% FFI
+                            "95%": 0.10        # 10% FFI
+                        }
+                        
+                        availability_required = st.selectbox(
+                            "Required Availability for Protective Device",
+                            options=list(availability_options.keys()),
+                            help="Ratio of time the protective device is functional to total time required"
+                        )
+                        
+                        # Calculate FFI based on availability
+                        ffi_percentage = availability_options[availability_required]
+                        
+                        # Display the FFI percentage from table
+                        st.info(f"**FFI (as % of MTBF):** {ffi_percentage * 100}%")
+                        
+                        # Calculate FFI in days
+                        if mtbf_protective > 0:
+                            mtbf_days = mtbf_protective * 365.25  # Convert years to days
+                            ff_interval = mtbf_days * ffi_percentage
+                            st.success(f"**Calculated FFI:** {ff_interval:.1f} days")
+                        else:
+                            ff_interval = 0.0
+                            st.warning("Enter MTBF to calculate Failure Finding Interval")
                     
-                    task_description = f"Test {test_method} every {ff_interval} days"
+                    task_description = f"Test {test_method} every {ff_interval:.1f} days (based on {availability_required} availability)"
                 
                 elif "Redesign" in task_type:
                     st.info("**Redesign:** One-off change to equipment, process, or procedure")
@@ -2782,8 +2822,11 @@ def stage_2_analysis():
                         update_task_type_options = ["Select...", 
                                                     "CBM - Condition Based Maintenance", 
                                                     "FTM - Fixed Time Maintenance",
-                                                    "FF - Failure Finding",
                                                     "Redesign"]
+                        
+                        # Only add FF if consequence is Hidden
+                        if "Hidden" in consequence_cat:
+                            update_task_type_options.insert(3, "FF - Failure Finding")
                         
                         # Only add OTF if consequence is NOT Safety/Environmental
                         if "Safety" not in consequence_cat and "Environmental" not in consequence_cat:
@@ -3250,21 +3293,66 @@ def stage_4_reports():
             for mode in current_asset['failure_modes']:
                 row = {
                     'Failure Mode ID': mode['id'],
+                    'Functional Failure ID': mode.get('functional_failure_id', ''),
                     'Component': mode['component'],
                     'Failure Mode': mode['description'],
-                    'Consequence': mode.get('consequence_category', 'Not categorized'),
+                    'Failure Mode Category': mode.get('category', ''),
                 }
                 
+                # Add effects data
                 if 'effects' in mode:
-                    row['Downtime (hrs)'] = mode['effects'].get('downtime', 0)
+                    effects = mode['effects']
+                    row['Evidence of Failure'] = effects.get('evidence', '')
+                    row['Safety/Environmental Impact'] = effects.get('safety_impact', '')
+                    row['Operational Impact'] = effects.get('operational_impact', '')
+                    row['Physical Damage'] = effects.get('physical_damage', '')
+                    row['Repair Action'] = effects.get('repair_action', '')
+                    row['Repair Time (hrs)'] = effects.get('repair_time', 0)
+                    row['Downtime (hrs)'] = effects.get('downtime', 0)
                 
+                # Add consequence data
+                row['Consequence Category'] = mode.get('consequence_category', 'Not categorized')
+                
+                # Add risk assessment data (for safety/environmental)
+                if 'risk_assessment' in mode:
+                    risk = mode['risk_assessment']
+                    row['Risk Consequence'] = risk.get('consequence', '')
+                    row['Risk Likelihood'] = risk.get('likelihood', '')
+                    row['Risk Score'] = risk.get('risk_score', '')
+                    row['Risk Level'] = risk.get('risk_level', '')
+                
+                # Add management task data
                 if 'management_task' in mode:
-                    row['Task Type'] = mode['management_task']['task_type']
-                    row['Cost ($)'] = mode['management_task']['cost']
+                    task = mode['management_task']
+                    row['Task Type'] = task.get('task_type', '')
+                    row['Task Description'] = task.get('description', '')
+                    row['Technically Feasible'] = task.get('technically_feasible', '')
+                    row['Worth Doing'] = task.get('worth_doing', '')
+                    row['Justification'] = task.get('justification', '')
+                    row['Task Cost ($)'] = task.get('cost', 0)
+                    row['Failure Cost ($)'] = task.get('failure_cost', 0)
+                    
+                    # Add post-implementation risk assessment if exists
+                    if 'post_risk_assessment' in task:
+                        post_risk = task['post_risk_assessment']
+                        row['Post-Task Risk Consequence'] = post_risk.get('consequence', '')
+                        row['Post-Task Risk Likelihood'] = post_risk.get('likelihood', '')
+                        row['Post-Task Risk Score'] = post_risk.get('risk_score', '')
+                        row['Post-Task Risk Level'] = post_risk.get('risk_level', '')
                 
                 detailed_data.append(row)
             
             df_detailed = pd.DataFrame(detailed_data)
+            
+            # Add horizontal scrollbar with custom styling
+            st.markdown("""
+            <style>
+            div[data-testid="stDataFrame"] > div {
+                overflow-x: auto;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
             st.dataframe(df_detailed, use_container_width=True)
     
     with tab3:
@@ -3273,46 +3361,181 @@ def stage_4_reports():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("#### Export Complete Project (JSON)")
-            
-            export_data = create_export_data()
-            if export_data:
-                json_str = json.dumps(export_data, indent=2)
-                
-                st.download_button(
-                    label="📥 Download Complete Project",
-                    data=json_str,
-                    file_name=f"rcm_project_{st.session_state.project_data.get('project_no', 'project')}_{datetime.now().strftime('%Y%m%d')}.json",
-                    mime="application/json",
-                    use_container_width=True
-                )
-                st.info(f"Includes all {len(st.session_state.assets)} assets and their analyses")
-        
-        with col2:
-            st.markdown("#### Export Single Asset (CSV)")
+            st.markdown("#### Export Complete Project (Excel)")
             
             if st.session_state.assets:
-                asset_for_csv = st.selectbox(
+                # Compile all failure modes from all assets into one comprehensive dataset
+                all_data = []
+                for asset in st.session_state.assets:
+                    if asset.get('failure_modes'):
+                        for mode in asset['failure_modes']:
+                            row = {
+                                'Asset Name': asset['asset_name'],
+                                'Asset Class': asset.get('asset_class', ''),
+                                'Asset Type': asset.get('asset_type', ''),
+                                'Site Location': asset.get('site_location', ''),
+                                'Failure Mode ID': mode['id'],
+                                'Functional Failure ID': mode.get('functional_failure_id', ''),
+                                'Component': mode['component'],
+                                'Failure Mode': mode['description'],
+                                'Failure Mode Category': mode.get('category', ''),
+                            }
+                            
+                            # Add effects data
+                            if 'effects' in mode:
+                                effects = mode['effects']
+                                row['Evidence of Failure'] = effects.get('evidence', '')
+                                row['Safety/Environmental Impact'] = effects.get('safety_impact', '')
+                                row['Operational Impact'] = effects.get('operational_impact', '')
+                                row['Physical Damage'] = effects.get('physical_damage', '')
+                                row['Repair Action'] = effects.get('repair_action', '')
+                                row['Repair Time (hrs)'] = effects.get('repair_time', 0)
+                                row['Downtime (hrs)'] = effects.get('downtime', 0)
+                            
+                            # Add consequence data
+                            row['Consequence Category'] = mode.get('consequence_category', 'Not categorized')
+                            
+                            # Add risk assessment data
+                            if 'risk_assessment' in mode:
+                                risk = mode['risk_assessment']
+                                row['Risk Consequence'] = risk.get('consequence', '')
+                                row['Risk Likelihood'] = risk.get('likelihood', '')
+                                row['Risk Score'] = risk.get('risk_score', '')
+                                row['Risk Level'] = risk.get('risk_level', '')
+                            
+                            # Add management task data
+                            if 'management_task' in mode:
+                                task = mode['management_task']
+                                row['Task Type'] = task.get('task_type', '')
+                                row['Task Description'] = task.get('description', '')
+                                row['Technically Feasible'] = task.get('technically_feasible', '')
+                                row['Worth Doing'] = task.get('worth_doing', '')
+                                row['Justification'] = task.get('justification', '')
+                                row['Task Cost ($)'] = task.get('cost', 0)
+                                row['Failure Cost ($)'] = task.get('failure_cost', 0)
+                                
+                                # Add post-implementation risk assessment if exists
+                                if 'post_risk_assessment' in task:
+                                    post_risk = task['post_risk_assessment']
+                                    row['Post-Task Risk Consequence'] = post_risk.get('consequence', '')
+                                    row['Post-Task Risk Likelihood'] = post_risk.get('likelihood', '')
+                                    row['Post-Task Risk Score'] = post_risk.get('risk_score', '')
+                                    row['Post-Task Risk Level'] = post_risk.get('risk_level', '')
+                            
+                            all_data.append(row)
+                
+                if all_data:
+                    df_complete = pd.DataFrame(all_data)
+                    
+                    # Convert to Excel
+                    output = io.BytesIO()
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        df_complete.to_excel(writer, sheet_name='Complete FMECA Analysis', index=False)
+                    output.seek(0)
+                    
+                    st.download_button(
+                        label="📥 Download Complete Project (Excel)",
+                        data=output,
+                        file_name=f"rcm_project_{st.session_state.project_data.get('project_no', 'project')}_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+                    st.info(f"Includes all {len(st.session_state.assets)} assets and {len(all_data)} failure modes")
+                else:
+                    st.warning("No failure mode data available to export")
+            else:
+                st.warning("No assets available to export")
+        
+        with col2:
+            st.markdown("#### Export Single Asset (Excel)")
+            
+            if st.session_state.assets:
+                asset_for_export = st.selectbox(
                     "Select Asset to Export",
                     options=range(len(st.session_state.assets)),
                     format_func=lambda x: st.session_state.assets[x]['asset_name'],
-                    key="csv_export_selector"
+                    key="excel_export_selector"
                 )
                 
-                selected_asset = st.session_state.assets[asset_for_csv]
-                if selected_asset.get('analysis_results'):
-                    df_export = pd.DataFrame(selected_asset['analysis_results'])
-                    csv = df_export.to_csv(index=False)
+                selected_asset = st.session_state.assets[asset_for_export]
+                
+                if selected_asset.get('failure_modes'):
+                    # Compile failure modes data for this asset
+                    asset_data = []
+                    for mode in selected_asset['failure_modes']:
+                        row = {
+                            'Asset Name': selected_asset['asset_name'],
+                            'Asset Class': selected_asset.get('asset_class', ''),
+                            'Asset Type': selected_asset.get('asset_type', ''),
+                            'Site Location': selected_asset.get('site_location', ''),
+                            'Failure Mode ID': mode['id'],
+                            'Functional Failure ID': mode.get('functional_failure_id', ''),
+                            'Component': mode['component'],
+                            'Failure Mode': mode['description'],
+                            'Failure Mode Category': mode.get('category', ''),
+                        }
+                        
+                        # Add effects data
+                        if 'effects' in mode:
+                            effects = mode['effects']
+                            row['Evidence of Failure'] = effects.get('evidence', '')
+                            row['Safety/Environmental Impact'] = effects.get('safety_impact', '')
+                            row['Operational Impact'] = effects.get('operational_impact', '')
+                            row['Physical Damage'] = effects.get('physical_damage', '')
+                            row['Repair Action'] = effects.get('repair_action', '')
+                            row['Repair Time (hrs)'] = effects.get('repair_time', 0)
+                            row['Downtime (hrs)'] = effects.get('downtime', 0)
+                        
+                        # Add consequence data
+                        row['Consequence Category'] = mode.get('consequence_category', 'Not categorized')
+                        
+                        # Add risk assessment data
+                        if 'risk_assessment' in mode:
+                            risk = mode['risk_assessment']
+                            row['Risk Consequence'] = risk.get('consequence', '')
+                            row['Risk Likelihood'] = risk.get('likelihood', '')
+                            row['Risk Score'] = risk.get('risk_score', '')
+                            row['Risk Level'] = risk.get('risk_level', '')
+                        
+                        # Add management task data
+                        if 'management_task' in mode:
+                            task = mode['management_task']
+                            row['Task Type'] = task.get('task_type', '')
+                            row['Task Description'] = task.get('description', '')
+                            row['Technically Feasible'] = task.get('technically_feasible', '')
+                            row['Worth Doing'] = task.get('worth_doing', '')
+                            row['Justification'] = task.get('justification', '')
+                            row['Task Cost ($)'] = task.get('cost', 0)
+                            row['Failure Cost ($)'] = task.get('failure_cost', 0)
+                            
+                            # Add post-implementation risk assessment if exists
+                            if 'post_risk_assessment' in task:
+                                post_risk = task['post_risk_assessment']
+                                row['Post-Task Risk Consequence'] = post_risk.get('consequence', '')
+                                row['Post-Task Risk Likelihood'] = post_risk.get('likelihood', '')
+                                row['Post-Task Risk Score'] = post_risk.get('risk_score', '')
+                                row['Post-Task Risk Level'] = post_risk.get('risk_level', '')
+                        
+                        asset_data.append(row)
+                    
+                    df_asset = pd.DataFrame(asset_data)
+                    
+                    # Convert to Excel
+                    output = io.BytesIO()
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        df_asset.to_excel(writer, sheet_name=selected_asset['asset_name'][:31], index=False)
+                    output.seek(0)
                     
                     st.download_button(
-                        label=f"📥 Download {selected_asset['asset_name']}",
-                        data=csv,
-                        file_name=f"rcm_analysis_{selected_asset['asset_name']}_{datetime.now().strftime('%Y%m%d')}.csv",
-                        mime="text/csv",
+                        label=f"📥 Download {selected_asset['asset_name']} (Excel)",
+                        data=output,
+                        file_name=f"rcm_analysis_{selected_asset['asset_name']}_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True
                     )
+                    st.info(f"Includes {len(asset_data)} failure modes for {selected_asset['asset_name']}")
                 else:
-                    st.info("No analysis results for this asset yet.")
+                    st.info("No failure mode data available for this asset yet.")
         
         st.markdown("---")
         st.markdown("#### Import Project Data")

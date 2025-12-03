@@ -80,12 +80,12 @@
             "repair_time": 4.0,
             "downtime": 8.0
           },
-          "consequence_category": "Evident (Operational)",
+          "consequence_category": "Hidden (Safety/Environmental)",
           "risk_assessment": {
-            "consequence": "4-High",
-            "likelihood": "4-Likely",
-            "risk_score": 8,
-            "risk_level": "High"
+            "consequence": "3-Moderate",
+            "likelihood": "3-Occasional",
+            "risk_score": 6,
+            "risk_level": "Medium"
           },
           "management_task": {
             "task_type": "FTM - Fixed Time Maintenance",
@@ -252,12 +252,12 @@
         "repair_time": 4.0,
         "downtime": 8.0
       },
-      "consequence_category": "Evident (Operational)",
+      "consequence_category": "Hidden (Safety/Environmental)",
       "risk_assessment": {
-        "consequence": "4-High",
-        "likelihood": "4-Likely",
-        "risk_score": 8,
-        "risk_level": "High"
+        "consequence": "3-Moderate",
+        "likelihood": "3-Occasional",
+        "risk_score": 6,
+        "risk_level": "Medium"
       },
       "management_task": {
         "task_type": "FTM - Fixed Time Maintenance",
@@ -319,6 +319,6 @@
       "cost": 0.0
     }
   ],
-  "current_stage": 2,
-  "autosave_date": "2025-12-03T17:03:31.289066"
+  "current_stage": 3,
+  "autosave_date": "2025-12-04T10:39:22.256753"
 }
