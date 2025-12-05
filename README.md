@@ -23,6 +23,7 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - **7 RCM Questions Framework**: Structured approach answering the fundamental questions of RCM
 - **FMECA Analysis**: Complete failure modes, effects, and criticality analysis
 - **Consequence Categorization**: 6-category system (Hidden/Evident × Safety/Operational/Non-operational)
+- **Configurable Risk Matrix**: Customizable risk thresholds for flexible risk classification
 - **Task Selection**: Intelligent selection of maintenance strategies (CBM, FTM, FF, Redesign, OTF)
 - **Interactive Data Management**: Table-based selection for viewing, updating, and deleting analysis data
 
@@ -42,6 +43,7 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - ✅ **Project-level and asset-level reporting**
 - ✅ Import/export for data persistence
 - ✅ **Table-based UI** for easy viewing, updating, and deleting of analysis data
+- ✅ **Configurable risk thresholds** via Administration panel
 
 ## Installation
 
@@ -143,12 +145,14 @@ Determine the significance of each failure:
 - **Operational**: Affects output, quality, or service
 - **Non-operational**: Only direct repair costs
 - **Table-based Management**: View all consequence categories in a table, select any row to update or delete
-- **Risk Assessment**: Automatic risk level calculation for safety/environmental consequences
+- **Risk Assessment**: Automatic risk level calculation for safety/environmental consequences using configurable thresholds
+- **Default Classification**: Low (2-5), Moderate (6-7), High (8-10) - customizable via Administration
 
 #### Step 7: Select Failure Management Tasks
 Choose appropriate maintenance strategy:
 
 **Proactive Tasks:**
+
 - **CBM** (Condition Based): Monitor condition, intervene when threshold reached
 - **FTM** (Fixed Time): Replace/overhaul at fixed intervals, with separate Useful Life and MTBF tracking
 - **FF** (Failure Finding): Test hidden failures periodically using availability-based FFI calculation (only available for Hidden consequence categories)
@@ -176,6 +180,26 @@ Review and plan for each asset:
 - One-off changes for redesign tasks
 - Implementation checklist for tracking
 - Resource allocation and scheduling
+
+### Administration
+
+Access the Administration panel from the sidebar to configure application settings:
+
+#### Configure Risk Matrix
+
+- **Customize Risk Thresholds**: Adjust how risk scores are classified
+  - Set Moderate Risk threshold (default: 6)
+  - Set High Risk threshold (default: 8)
+  - Preview changes before applying
+- **Dynamic Updates**: Changes apply immediately to:
+  - Risk Matrix table in Stage 2, Tab 7
+  - All consequence category risk assessments
+  - Task selection risk evaluations
+  - Task update forms
+- **Validation**: Ensures High threshold is always greater than Moderate
+- **Reset Option**: Return to default thresholds at any time
+
+**Note**: Risk threshold configuration persists throughout your session but resets to defaults when you restart the application.
 
 ### Stage 4: Reports & Export
 
