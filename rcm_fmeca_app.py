@@ -12,19 +12,39 @@ from datetime import datetime
 import io
 import configparser
 import os
+import time
 
-# Load configuration
-config = configparser.ConfigParser()
-config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
-config.read(config_path)
+# Cache configuration loading for better performance
+@st.cache_resource
+def load_config():
+    """Load and cache configuration file
+    
+    Note: Organization details (authority_name, department, contact_email) are now
+    sourced from the .registration file, not from config.ini. The config.ini values
+    are kept as placeholders only and should remain empty.
+    """
+    config = configparser.ConfigParser()
+    config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+    config.read(config_path)
+    return {
+        'APP_NAME': config.get('Application', 'name', fallback='FMECA & RCM Analysis Tool'),
+        'APP_VERSION': config.get('Application', 'version', fallback='1.0.0'),
+        'REGISTRATION_DATE': config.get('Application', 'registration_date', fallback='2025-10-20'),
+        'AUTHORITY_NAME': config.get('Organization', 'authority_name', fallback=''),  # Not used - from .registration
+        'DEPARTMENT': config.get('Organization', 'department', fallback=''),  # Not used - from .registration
+        'CONTACT_EMAIL': config.get('Organization', 'contact_email', fallback=''),  # Not used - from .registration
+        'SOFTWARE_CONTACT': config.get('Application', 'software_contact_email', fallback='sm@odysseus-imc.com'),
+        'TECHNICAL_CONTACT': config.get('Application', 'technical_contact_email', fallback='adam.hassan@cambia.com.au')
+    }
 
-# Get configuration values
-APP_NAME = config.get('Application', 'name', fallback='FMECA & RCM Analysis Tool')
-APP_VERSION = config.get('Application', 'version', fallback='1.0.0')
-REGISTRATION_DATE = config.get('Application', 'registration_date', fallback='2025-10-20')
-AUTHORITY_NAME = config.get('Organization', 'authority_name', fallback='Organization')
-DEPARTMENT = config.get('Organization', 'department', fallback='Asset Management')
-CONTACT_EMAIL = config.get('Organization', 'contact_email', fallback='')
+config_data = load_config()
+APP_NAME = config_data['APP_NAME']
+APP_VERSION = config_data['APP_VERSION']
+REGISTRATION_DATE = config_data['REGISTRATION_DATE']
+# Organization details below are NOT USED - all registration info comes from .registration file
+AUTHORITY_NAME = config_data['AUTHORITY_NAME']
+DEPARTMENT = config_data['DEPARTMENT']
+CONTACT_EMAIL = config_data['CONTACT_EMAIL']
 
 # Page configuration
 st.set_page_config(
@@ -34,13 +54,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better styling
-st.markdown("""
+# Cache CSS to avoid reprocessing on every page load
+@st.cache_data
+def get_custom_css():
+    """Return cached custom CSS string"""
+    return """
 <style>
+    /* Main headings - muted gold color */
+    h1, h2, h3 {
+        color: #D4A520 !important;
+    }
+    
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #1f77b4;
+        color: #D4A520;
         text-align: center;
         padding: 1rem;
         background: linear-gradient(90deg, #e3f2fd 0%, #bbdefb 100%);
@@ -130,8 +158,49 @@ st.markdown("""
         border-color: #B71C1C !important;
         color: white !important;
     }
+    
+    /* Red border for all dropdown/selectbox elements */
+    .stSelectbox > div > div {
+        border: 2px solid red !important;
+        border-radius: 4px !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] > div {
+        border: 2px solid red !important;
+    }
+    
+    /* Light grey background for dropdown menu options */
+    .stSelectbox [data-baseweb="popover"] {
+        background-color: #f5f5f5 !important;
+    }
+    
+    .stSelectbox [data-baseweb="menu"] {
+        background-color: #f5f5f5 !important;
+    }
+    
+    .stSelectbox [role="listbox"] {
+        background-color: #f5f5f5 !important;
+    }
+    
+    .stSelectbox [role="option"] {
+        background-color: #f5f5f5 !important;
+        color: #808080 !important;
+    }
+    
+    .stSelectbox [role="option"]:hover {
+        background-color: #e0e0e0 !important;
+        color: #808080 !important;
+    }
+    
+    .stSelectbox [aria-selected="true"] {
+        background-color: #d3d3d3 !important;
+        color: #808080 !important;
+    }
 </style>
-""", unsafe_allow_html=True)
+"""
+
+# Apply cached CSS
+st.markdown(get_custom_css(), unsafe_allow_html=True)
 
 # Initialize session state
 def initialize_session_state():
@@ -196,8 +265,147 @@ def initialize_session_state():
     
     if 'current_view' not in st.session_state:
         st.session_state.current_view = 'rcm_navigation'
+    
+    # Initialize autosave flag
+    if 'last_autosave_hash' not in st.session_state:
+        st.session_state.last_autosave_hash = None
+    
+    # Flag to track if we've attempted autorestore
+    if 'autorestore_attempted' not in st.session_state:
+        st.session_state.autorestore_attempted = False
+    
+    # Risk matrix configuration thresholds
+    if 'risk_moderate_threshold' not in st.session_state:
+        st.session_state.risk_moderate_threshold = 6
+    
+    if 'risk_high_threshold' not in st.session_state:
+        st.session_state.risk_high_threshold = 8
 
 initialize_session_state()
+
+# Risk Classification Helper Functions
+def get_risk_level(risk_score):
+    """Get risk level based on score and current thresholds"""
+    if risk_score >= st.session_state.risk_high_threshold:
+        return "High", "red"
+    elif risk_score >= st.session_state.risk_moderate_threshold:
+        return "Moderate", "orange"
+    else:
+        return "Low", "green"
+
+def get_risk_matrix_cell_class(score):
+    """Get CSS class for risk matrix cell based on score"""
+    if score >= st.session_state.risk_high_threshold:
+        return "risk-high"
+    elif score >= st.session_state.risk_moderate_threshold:
+        return "risk-medium"
+    else:
+        return "risk-low"
+
+def get_risk_matrix_cell_label(score):
+    """Get label (L/M/H) for risk matrix cell based on score"""
+    if score >= st.session_state.risk_high_threshold:
+        return "H"
+    elif score >= st.session_state.risk_moderate_threshold:
+        return "M"
+    else:
+        return "L"
+
+def generate_risk_matrix_html():
+    """Generate dynamic risk matrix HTML based on current thresholds"""
+    moderate_thresh = st.session_state.risk_moderate_threshold
+    high_thresh = st.session_state.risk_high_threshold
+    
+    # Calculate score ranges for legend
+    low_max = moderate_thresh - 1
+    moderate_max = high_thresh - 1
+    
+    matrix_html = f"""
+    <style>
+        .risk-matrix {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }}
+        .risk-matrix th, .risk-matrix td {{
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+        }}
+        .risk-matrix th {{
+            background-color: #f0f0f0;
+            color: #333;
+        }}
+        .risk-low {{
+            background-color: #90EE90;
+            color: #000;
+        }}
+        .risk-medium {{
+            background-color: #FFA500;
+            color: #fff;
+        }}
+        .risk-high {{
+            background-color: #FF6B6B;
+            color: #fff;
+        }}
+    </style>
+    <table class="risk-matrix">
+        <tr>
+            <th>Consequence →<br>Likelihood ↓</th>
+            <th>1-Insignificant</th>
+            <th>2-Minor</th>
+            <th>3-Moderate</th>
+            <th>4-High</th>
+            <th>5-Catastrophic</th>
+        </tr>
+        <tr>
+            <th>5-Almost Certain</th>
+            <td class="{get_risk_matrix_cell_class(6)}">6 ({get_risk_matrix_cell_label(6)})</td>
+            <td class="{get_risk_matrix_cell_class(7)}">7 ({get_risk_matrix_cell_label(7)})</td>
+            <td class="{get_risk_matrix_cell_class(8)}">8 ({get_risk_matrix_cell_label(8)})</td>
+            <td class="{get_risk_matrix_cell_class(9)}">9 ({get_risk_matrix_cell_label(9)})</td>
+            <td class="{get_risk_matrix_cell_class(10)}">10 ({get_risk_matrix_cell_label(10)})</td>
+        </tr>
+        <tr>
+            <th>4-Likely</th>
+            <td class="{get_risk_matrix_cell_class(5)}">5 ({get_risk_matrix_cell_label(5)})</td>
+            <td class="{get_risk_matrix_cell_class(6)}">6 ({get_risk_matrix_cell_label(6)})</td>
+            <td class="{get_risk_matrix_cell_class(7)}">7 ({get_risk_matrix_cell_label(7)})</td>
+            <td class="{get_risk_matrix_cell_class(8)}">8 ({get_risk_matrix_cell_label(8)})</td>
+            <td class="{get_risk_matrix_cell_class(9)}">9 ({get_risk_matrix_cell_label(9)})</td>
+        </tr>
+        <tr>
+            <th>3-Occasional</th>
+            <td class="{get_risk_matrix_cell_class(4)}">4 ({get_risk_matrix_cell_label(4)})</td>
+            <td class="{get_risk_matrix_cell_class(5)}">5 ({get_risk_matrix_cell_label(5)})</td>
+            <td class="{get_risk_matrix_cell_class(6)}">6 ({get_risk_matrix_cell_label(6)})</td>
+            <td class="{get_risk_matrix_cell_class(7)}">7 ({get_risk_matrix_cell_label(7)})</td>
+            <td class="{get_risk_matrix_cell_class(8)}">8 ({get_risk_matrix_cell_label(8)})</td>
+        </tr>
+        <tr>
+            <th>2-Unlikely</th>
+            <td class="{get_risk_matrix_cell_class(3)}">3 ({get_risk_matrix_cell_label(3)})</td>
+            <td class="{get_risk_matrix_cell_class(4)}">4 ({get_risk_matrix_cell_label(4)})</td>
+            <td class="{get_risk_matrix_cell_class(5)}">5 ({get_risk_matrix_cell_label(5)})</td>
+            <td class="{get_risk_matrix_cell_class(6)}">6 ({get_risk_matrix_cell_label(6)})</td>
+            <td class="{get_risk_matrix_cell_class(7)}">7 ({get_risk_matrix_cell_label(7)})</td>
+        </tr>
+        <tr>
+            <th>1-Rare</th>
+            <td class="{get_risk_matrix_cell_class(2)}">2 ({get_risk_matrix_cell_label(2)})</td>
+            <td class="{get_risk_matrix_cell_class(3)}">3 ({get_risk_matrix_cell_label(3)})</td>
+            <td class="{get_risk_matrix_cell_class(4)}">4 ({get_risk_matrix_cell_label(4)})</td>
+            <td class="{get_risk_matrix_cell_class(5)}">5 ({get_risk_matrix_cell_label(5)})</td>
+            <td class="{get_risk_matrix_cell_class(6)}">6 ({get_risk_matrix_cell_label(6)})</td>
+        </tr>
+    </table>
+    <p style="font-size: 12px; color: #666;">
+        <strong>Risk Levels:</strong> L = Low (2-{low_max}), M = Moderate ({moderate_thresh}-{moderate_max}), H = High ({high_thresh}-10)
+    </p>
+    """
+    return matrix_html
 
 # Import/Export Helper Functions
 def create_export_data():
@@ -285,6 +493,17 @@ def autosave_session_data():
         if not st.session_state.project_data.get('project_no') and not st.session_state.asset_data.get('asset_name'):
             return
         
+        # Create a hash of current data to detect changes
+        current_data_hash = hash(json.dumps({
+            "project": st.session_state.project_data,
+            "assets_count": len(st.session_state.assets),
+            "stage": st.session_state.current_stage
+        }, sort_keys=True))
+        
+        # Only save if data has changed
+        if hasattr(st.session_state, 'last_autosave_hash') and st.session_state.last_autosave_hash == current_data_hash:
+            return
+        
         save_data = {
             "application_info": {
                 "name": APP_NAME,
@@ -308,6 +527,9 @@ def autosave_session_data():
         
         with open(autosave_path, 'w') as f:
             json.dump(save_data, f, indent=2)
+        
+        # Store hash to avoid redundant saves
+        st.session_state.last_autosave_hash = current_data_hash
         
     except Exception as e:
         # Silently fail - don't interrupt user workflow
@@ -394,6 +616,162 @@ def save_asset_analysis_data():
     except Exception as e:
         print(f"Error saving asset analysis data: {str(e)}")
 
+# Registration Management Functions
+def get_registration_path():
+    """Get the path for the registration file"""
+    return os.path.join(os.path.dirname(__file__), '.registration')
+
+def is_registered():
+    """Check if the application is registered"""
+    try:
+        registration_path = get_registration_path()
+        if not os.path.exists(registration_path):
+            return False
+        
+        with open(registration_path, 'r') as f:
+            reg_data = json.load(f)
+            # Check if all required fields are present and not empty
+            required_fields = ['authority_name', 'department', 'contact_person', 'contact_email']
+            return all(reg_data.get(field, '').strip() for field in required_fields)
+    except Exception as e:
+        print(f"Registration check error: {str(e)}")
+        return False
+
+def save_registration(authority_name, department, contact_person, contact_email, phone, address):
+    """Save registration details"""
+    try:
+        registration_path = get_registration_path()
+        reg_data = {
+            'authority_name': authority_name,
+            'department': department,
+            'contact_person': contact_person,
+            'contact_email': contact_email,
+            'phone': phone,
+            'address': address,
+            'registration_date': datetime.now().isoformat(),
+            'app_version': APP_VERSION
+        }
+        
+        with open(registration_path, 'w') as f:
+            json.dump(reg_data, f, indent=2)
+        
+        return True
+    except Exception as e:
+        st.error(f"Error saving registration: {str(e)}")
+        return False
+
+def get_registration_details():
+    """Get stored registration details"""
+    try:
+        registration_path = get_registration_path()
+        if os.path.exists(registration_path):
+            with open(registration_path, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading registration: {str(e)}")
+    return {}
+
+def show_registration_form():
+    """Display registration form that must be completed before using the app"""
+    st.markdown("# 🔐 Application Registration Required")
+    st.markdown("---")
+    
+    st.warning("⚠️ This application requires registration before use. Please enter your organization details below.")
+    st.markdown("")
+    
+    st.markdown("### Organization Information")
+    st.markdown(f"**Application:** {APP_NAME}")
+    st.markdown(f"**Version:** {APP_VERSION}")
+    st.markdown(f"**Developer:** Odysseus-imc Pty Ltd & Cambia Consulting Pty Ltd")
+    st.markdown("---")
+    
+    with st.form("registration_form"):
+        st.subheader("Registration Details")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            authority_name = st.text_input(
+                "Authority/Organization Name *",
+                help="Full legal name of your organization",
+                placeholder="e.g., Murrumbidgee Irrigation"
+            )
+            
+            department = st.text_input(
+                "Department/Division *",
+                help="Department using this application",
+                placeholder="e.g., Asset Management Department"
+            )
+            
+            contact_person = st.text_input(
+                "Contact Person Name *",
+                help="Primary contact person for this registration",
+                placeholder="e.g., John Smith"
+            )
+        
+        with col2:
+            contact_email = st.text_input(
+                "Contact Email *",
+                help="Email address for application support and updates",
+                placeholder="e.g., john.smith@organization.com"
+            )
+            
+            phone = st.text_input(
+                "Phone Number",
+                help="Contact phone number (optional)",
+                placeholder="e.g., +61 2 1234 5678"
+            )
+            
+            address = st.text_area(
+                "Organization Address",
+                help="Physical or postal address (optional)",
+                placeholder="Street, City, State, Postcode"
+            )
+        
+        st.markdown("")
+        st.markdown("**Fields marked with * are required**")
+        st.markdown("")
+        
+        col_a, col_b, col_c = st.columns([1, 1, 2])
+        with col_a:
+            submit = st.form_submit_button("✅ Register Application", type="primary", use_container_width=True)
+        
+        if submit:
+            # Validate required fields
+            if not authority_name or not authority_name.strip():
+                st.error("❌ Authority/Organization Name is required")
+            elif not department or not department.strip():
+                st.error("❌ Department/Division is required")
+            elif not contact_person or not contact_person.strip():
+                st.error("❌ Contact Person Name is required")
+            elif not contact_email or not contact_email.strip():
+                st.error("❌ Contact Email is required")
+            elif '@' not in contact_email:
+                st.error("❌ Please enter a valid email address")
+            else:
+                # Save registration
+                if save_registration(
+                    authority_name.strip(),
+                    department.strip(),
+                    contact_person.strip(),
+                    contact_email.strip(),
+                    phone.strip() if phone else '',
+                    address.strip() if address else ''
+                ):
+                    st.success("✅ Registration successful! Reloading application...")
+                    st.balloons()
+                    # Force reload to apply registration
+                    st.rerun()
+    
+    st.markdown("---")
+    st.markdown("")
+    st.info("📧 For registration assistance, contact: sm@odysseus-imc.com")
+    st.markdown("")
+    st.markdown("")
+    
+    # Prevent any other content from showing
+    st.stop()
+
 # Sidebar Navigation
 def sidebar_navigation():
     """Create sidebar navigation"""
@@ -411,6 +789,14 @@ def sidebar_navigation():
             st.session_state.current_stage = stage_num
             st.session_state.current_view = 'rcm_navigation'
             st.rerun()
+    
+    # Administration Section
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### ⚙️ Administration")
+    
+    if st.sidebar.button("🔧 Administration", key="nav_admin", use_container_width=True):
+        st.session_state.current_view = 'administration'
+        st.rerun()
     
     # Data Management Section
     st.sidebar.markdown("---")
@@ -509,19 +895,42 @@ def sidebar_navigation():
     st.sidebar.markdown("---")
     st.sidebar.markdown("### ℹ️ Application Info")
     with st.sidebar.expander("Details"):
-        st.markdown(f"**Authority:** {AUTHORITY_NAME}")
-        st.markdown(f"**Department:** {DEPARTMENT}")
+        st.markdown(f"**Authority:** {REGISTERED_AUTHORITY}")
+        st.markdown(f"**Department:** {REGISTERED_DEPARTMENT}")
+        if REGISTERED_CONTACT:
+            st.markdown(f"**Contact Person:** {REGISTERED_CONTACT}")
+        if REGISTERED_EMAIL:
+            st.markdown(f"**Contact Email:** {REGISTERED_EMAIL}")
         st.markdown(f"**Version:** {APP_VERSION}")
-        st.markdown(f"**Registration Date:** {REGISTRATION_DATE}")
-        if CONTACT_EMAIL:
-            st.markdown(f"**Contact:** {CONTACT_EMAIL}")
+        if REGISTERED_DATE:
+            # Format the ISO date to be more readable
+            try:
+                from datetime import datetime
+                reg_date_obj = datetime.fromisoformat(REGISTERED_DATE)
+                formatted_date = reg_date_obj.strftime('%d %B %Y')
+                st.markdown(f"**Registration Date:** {formatted_date}")
+            except:
+                st.markdown(f"**Registration Date:** {REGISTERED_DATE}")
+
+# Restore autosave once per session (not on every page render)
+if not st.session_state.autorestore_attempted:
+    restore_session_data()
+    st.session_state.autorestore_attempted = True
+
+# Registration Check - Must be registered to use the application
+if not is_registered():
+    show_registration_form()
+    # st.stop() is called in show_registration_form() to prevent further execution
+
+# Load registration details for display (no fallback to config.ini)
+registration_info = get_registration_details()
+REGISTERED_AUTHORITY = registration_info.get('authority_name', 'Not Registered')
+REGISTERED_DEPARTMENT = registration_info.get('department', 'Not Registered')
+REGISTERED_CONTACT = registration_info.get('contact_person', '')
+REGISTERED_EMAIL = registration_info.get('contact_email', '')
+REGISTERED_DATE = registration_info.get('registration_date', '')
 
 sidebar_navigation()
-
-# Periodic autosave on every page render (as a safety net)
-# This ensures data is saved even if a save button was missed
-if st.session_state.project_data.get('project_no') or st.session_state.asset_data.get('asset_name'):
-    autosave_session_data()
 
 # Main content area
 st.markdown("# 🔧 FMECA & RCM Analysis Tool")
@@ -531,7 +940,7 @@ and develop optimal maintenance strategies.""")
 st.markdown("")
 st.markdown(f"""**Developed by:** Odysseus-imc Pty Ltd  
 **Technical expertise by:** Cambia Consulting Pty Ltd  
-**Registered to:** {AUTHORITY_NAME}  
+**Registered to:** {REGISTERED_AUTHORITY}  
 **Version:** {APP_VERSION}""")
 st.markdown("---")
 
@@ -865,8 +1274,142 @@ elif st.session_state.current_view == 'future':
     feature requests, or to report issues.
     """)
     st.markdown("")
-    st.markdown(f"""**Software Support:** {config.get('Application', 'software_contact_email', fallback='sm@odysseus-imc.com')}  
-**Technical Support:** {config.get('Application', 'technical_contact_email', fallback='adam.hassan@cambia.com.au')}""")
+    st.markdown(f"""**Software Support:** {config_data['SOFTWARE_CONTACT']}  
+**Technical Support:** {config_data['TECHNICAL_CONTACT']}""")
+
+elif st.session_state.current_view == 'administration':
+    # Administration page
+    st.markdown("### ⚙️ Administration")
+    st.markdown("")
+    
+    st.info("Use this section to configure application settings and parameters.")
+    st.markdown("")
+    
+    # Administration options dropdown
+    admin_option = st.selectbox(
+        "Select Administration Task",
+        ["Select...", "Configure Risk Matrix"],
+        key="admin_task_selector"
+    )
+    
+    if admin_option == "Configure Risk Matrix":
+        st.markdown("---")
+        st.markdown("### 📊 Configure Risk Matrix")
+        st.markdown("")
+        
+        st.markdown("""Configure the risk scoring thresholds and categories for the Risk Matrix used throughout 
+        the application. These settings determine how risk scores are classified and displayed.""")
+        st.markdown("")
+        
+        # Current configuration display
+        st.markdown("#### Current Configuration")
+        col1, col2, col3 = st.columns(3)
+        
+        # Get current thresholds
+        current_moderate = st.session_state.risk_moderate_threshold
+        current_high = st.session_state.risk_high_threshold
+        
+        with col1:
+            st.markdown("**Low Risk**")
+            st.markdown("- Color: Green")
+            st.markdown(f"- Score Range: 2-{current_moderate-1}")
+        
+        with col2:
+            st.markdown("**Moderate Risk**")
+            st.markdown("- Color: Orange")
+            st.markdown(f"- Score Range: {current_moderate}-{current_high-1}")
+        
+        with col3:
+            st.markdown("**High Risk**")
+            st.markdown("- Color: Red")
+            st.markdown(f"- Score Range: {current_high}-10")
+        
+        st.markdown("")
+        st.markdown("---")
+        st.markdown("#### Configure Risk Thresholds")
+        st.markdown("")
+        
+        st.warning("⚠️ Changing these thresholds will affect how risks are classified throughout the application.")
+        st.markdown("")
+        
+        col_a, col_b = st.columns(2)
+        
+        with col_a:
+            moderate_threshold = st.number_input(
+                "Moderate Risk Threshold (minimum score)",
+                min_value=2,
+                max_value=9,
+                value=st.session_state.risk_moderate_threshold,
+                help="Risk scores at or above this value are classified as Moderate"
+            )
+        
+        with col_b:
+            high_threshold = st.number_input(
+                "High Risk Threshold (minimum score)",
+                min_value=3,
+                max_value=10,
+                value=st.session_state.risk_high_threshold,
+                help="Risk scores at or above this value are classified as High"
+            )
+        
+        st.markdown("")
+        
+        # Validation
+        if high_threshold <= moderate_threshold:
+            st.error("❌ High Risk threshold must be greater than Moderate Risk threshold!")
+        else:
+            st.success("✅ Valid threshold configuration")
+            
+            # Preview the new configuration
+            st.markdown("")
+            st.markdown("#### Preview New Configuration")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("**Low Risk**")
+                st.markdown("- Color: Green")
+                st.markdown(f"- Score Range: 2-{moderate_threshold-1}")
+            
+            with col2:
+                st.markdown("**Moderate Risk**")
+                st.markdown("- Color: Orange")
+                st.markdown(f"- Score Range: {moderate_threshold}-{high_threshold-1}")
+            
+            with col3:
+                st.markdown("**High Risk**")
+                st.markdown("- Color: Red")
+                st.markdown(f"- Score Range: {high_threshold}-10")
+            
+            st.markdown("")
+            st.markdown("")
+            
+            # Save button
+            col_save, col_reset = st.columns([1, 1])
+            
+            with col_save:
+                if st.button("💾 Save Configuration", type="primary", use_container_width=True):
+                    st.session_state.risk_moderate_threshold = moderate_threshold
+                    st.session_state.risk_high_threshold = high_threshold
+                    st.success(f"✅ Risk matrix configuration saved! Moderate≥{moderate_threshold}, High≥{high_threshold}")
+                    st.info("Risk Matrix and classification logic have been updated throughout the application.")
+                    st.balloons()
+                    # Force rerun to apply changes
+                    time.sleep(1)
+                    st.rerun()
+            
+            with col_reset:
+                if st.button("🔄 Reset to Default", use_container_width=True):
+                    st.session_state.risk_moderate_threshold = 6
+                    st.session_state.risk_high_threshold = 8
+                    st.info("ℹ️ Configuration reset to default values: Moderate=6, High=8")
+                    st.rerun()
+        
+        st.markdown("")
+        st.markdown("---")
+        st.markdown("")
+        st.success("""**Configuration Active:** Risk thresholds are now fully customizable. 
+        Changes will be applied immediately to all risk assessments, the Risk Matrix display, and consequence category classifications throughout the application.""")
 
 # Render current stage content based on sidebar selection
 st.markdown("---")
@@ -1998,15 +2541,8 @@ def stage_2_analysis():
                     like_num = int(likelihood_rating[0])
                     risk_score = cons_num + like_num
                     
-                    if risk_score >= 8:
-                        risk_level = "High"
-                        risk_color = "red"
-                    elif risk_score >= 6:
-                        risk_level = "Medium"
-                        risk_color = "orange"
-                    else:
-                        risk_level = "Low"
-                        risk_color = "green"
+                    # Get risk level based on current thresholds
+                    risk_level, risk_color = get_risk_level(risk_score)
                     
                     st.markdown(f"""
                     <div style="background-color: {risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
@@ -2199,15 +2735,8 @@ def stage_2_analysis():
                                 like_num = int(updated_likelihood_rating[0])
                                 risk_score = cons_num + like_num
                                 
-                                if risk_score >= 8:
-                                    risk_level = "High"
-                                    risk_color = "red"
-                                elif risk_score >= 6:
-                                    risk_level = "Medium"
-                                    risk_color = "orange"
-                                else:
-                                    risk_level = "Low"
-                                    risk_color = "green"
+                                # Get risk level based on current thresholds
+                                risk_level, risk_color = get_risk_level(risk_score)
                                 
                                 st.markdown(f"""
                                 <div style="background-color: {risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
@@ -2298,93 +2827,8 @@ def stage_2_analysis():
             # Display Risk Matrix
             st.markdown("**Risk Matrix:** Consequence + Likelihood = Risk Score")
             
-            # Create the risk matrix table with color coding
-            matrix_html = """
-            <style>
-                .risk-matrix {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 20px 0;
-                    font-size: 14px;
-                }
-                .risk-matrix th, .risk-matrix td {
-                    border: 1px solid #ddd;
-                    padding: 12px;
-                    text-align: center;
-                    font-weight: bold;
-                }
-                .risk-matrix th {
-                    background-color: #f0f0f0;
-                    color: #333;
-                }
-                .risk-low {
-                    background-color: #90EE90;
-                    color: #000;
-                }
-                .risk-medium {
-                    background-color: #FFA500;
-                    color: #fff;
-                }
-                .risk-high {
-                    background-color: #FF6B6B;
-                    color: #fff;
-                }
-            </style>
-            <table class="risk-matrix">
-                <tr>
-                    <th>Consequence →<br>Likelihood ↓</th>
-                    <th>1-Insignificant</th>
-                    <th>2-Minor</th>
-                    <th>3-Moderate</th>
-                    <th>4-High</th>
-                    <th>5-Catastrophic</th>
-                </tr>
-                <tr>
-                    <th>5-Almost Certain</th>
-                    <td class="risk-medium">6 (M)</td>
-                    <td class="risk-high">7 (H)</td>
-                    <td class="risk-high">8 (H)</td>
-                    <td class="risk-high">9 (H)</td>
-                    <td class="risk-high">10 (H)</td>
-                </tr>
-                <tr>
-                    <th>4-Likely</th>
-                    <td class="risk-low">5 (L)</td>
-                    <td class="risk-medium">6 (M)</td>
-                    <td class="risk-high">7 (H)</td>
-                    <td class="risk-high">8 (H)</td>
-                    <td class="risk-high">9 (H)</td>
-                </tr>
-                <tr>
-                    <th>3-Occasional</th>
-                    <td class="risk-low">4 (L)</td>
-                    <td class="risk-low">5 (L)</td>
-                    <td class="risk-medium">6 (M)</td>
-                    <td class="risk-high">7 (H)</td>
-                    <td class="risk-high">8 (H)</td>
-                </tr>
-                <tr>
-                    <th>2-Unlikely</th>
-                    <td class="risk-low">3 (L)</td>
-                    <td class="risk-low">4 (L)</td>
-                    <td class="risk-low">5 (L)</td>
-                    <td class="risk-medium">6 (M)</td>
-                    <td class="risk-high">7 (H)</td>
-                </tr>
-                <tr>
-                    <th>1-Rare</th>
-                    <td class="risk-low">2 (L)</td>
-                    <td class="risk-low">3 (L)</td>
-                    <td class="risk-low">4 (L)</td>
-                    <td class="risk-low">5 (L)</td>
-                    <td class="risk-medium">6 (M)</td>
-                </tr>
-            </table>
-            <p style="font-size: 12px; color: #666;">
-                <strong>Risk Levels:</strong> L = Low (2-5), M = Medium (6-7), H = High (8-10)
-            </p>
-            """
-            st.markdown(matrix_html, unsafe_allow_html=True)
+            # Generate and display dynamic risk matrix based on current thresholds
+            st.markdown(generate_risk_matrix_html(), unsafe_allow_html=True)
             
             st.markdown("---")
             st.markdown("### Task Selection Decision")
@@ -2482,15 +2926,8 @@ def stage_2_analysis():
                             post_like_num = int(post_likelihood_rating[0])
                             post_risk_score = post_cons_num + post_like_num
                             
-                            if post_risk_score >= 8:
-                                post_risk_level = "High"
-                                post_risk_color = "red"
-                            elif post_risk_score >= 6:
-                                post_risk_level = "Medium"
-                                post_risk_color = "orange"
-                            else:
-                                post_risk_level = "Low"
-                                post_risk_color = "green"
+                            # Get risk level based on current thresholds
+                            post_risk_level, post_risk_color = get_risk_level(post_risk_score)
                             
                             st.markdown(f"""
                             <div style="background-color: {post_risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
@@ -2587,15 +3024,8 @@ def stage_2_analysis():
                             post_like_num = int(post_likelihood_rating[0])
                             post_risk_score = post_cons_num + post_like_num
                             
-                            if post_risk_score >= 8:
-                                post_risk_level = "High"
-                                post_risk_color = "red"
-                            elif post_risk_score >= 6:
-                                post_risk_level = "Medium"
-                                post_risk_color = "orange"
-                            else:
-                                post_risk_level = "Low"
-                                post_risk_color = "green"
+                            # Get risk level based on current thresholds
+                            post_risk_level, post_risk_color = get_risk_level(post_risk_score)
                             
                             st.markdown(f"""
                             <div style="background-color: {post_risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">
@@ -2952,15 +3382,8 @@ def stage_2_analysis():
                                     updated_post_like_num = int(updated_post_likelihood_rating[0])
                                     updated_post_risk_score = updated_post_cons_num + updated_post_like_num
                                     
-                                    if updated_post_risk_score >= 8:
-                                        updated_post_risk_level = "High"
-                                        updated_post_risk_color = "red"
-                                    elif updated_post_risk_score >= 6:
-                                        updated_post_risk_level = "Medium"
-                                        updated_post_risk_color = "orange"
-                                    else:
-                                        updated_post_risk_level = "Low"
-                                        updated_post_risk_color = "green"
+                                    # Get risk level based on current thresholds
+                                    updated_post_risk_level, updated_post_risk_color = get_risk_level(updated_post_risk_score)
                                     
                                     st.markdown(f"""
                                     <div style="background-color: {updated_post_risk_color}; color: white; padding: 10px; border-radius: 5px; text-align: center;">

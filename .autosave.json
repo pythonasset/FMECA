@@ -2,8 +2,8 @@
   "application_info": {
     "name": "FMECA & RCM Analysis Tool",
     "version": "1.0.0",
-    "authority": "**********************",
-    "department": "Asset Management"
+    "authority": "",
+    "department": ""
   },
   "project_information": {
     "project_no": "Test0001",
@@ -80,12 +80,12 @@
             "repair_time": 4.0,
             "downtime": 8.0
           },
-          "consequence_category": "Hidden (Safety/Environmental)",
+          "consequence_category": "Evident (Safety/Environmental)",
           "risk_assessment": {
-            "consequence": "3-Moderate",
+            "consequence": "5-Catastrophic",
             "likelihood": "3-Occasional",
-            "risk_score": 6,
-            "risk_level": "Medium"
+            "risk_score": 8,
+            "risk_level": "High"
           },
           "management_task": {
             "task_type": "FTM - Fixed Time Maintenance",
@@ -252,12 +252,12 @@
         "repair_time": 4.0,
         "downtime": 8.0
       },
-      "consequence_category": "Hidden (Safety/Environmental)",
+      "consequence_category": "Evident (Safety/Environmental)",
       "risk_assessment": {
-        "consequence": "3-Moderate",
+        "consequence": "5-Catastrophic",
         "likelihood": "3-Occasional",
-        "risk_score": 6,
-        "risk_level": "Medium"
+        "risk_score": 8,
+        "risk_level": "High"
       },
       "management_task": {
         "task_type": "FTM - Fixed Time Maintenance",
@@ -319,6 +319,6 @@
       "cost": 0.0
     }
   ],
-  "current_stage": 3,
-  "autosave_date": "2025-12-04T10:39:22.256753"
+  "current_stage": 2,
+  "autosave_date": "2025-12-06T05:44:31.979208"
 }

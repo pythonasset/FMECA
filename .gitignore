@@ -212,3 +212,5 @@ __marimo__/
 # Project-specific
 *.local.json
 files.zip
+.autosave.json
+.registration
