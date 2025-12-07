@@ -45,6 +45,20 @@ This application implements the complete RCM methodology based on the Murrumbidg
 - ✅ **Table-based UI** for easy viewing, updating, and deleting of analysis data
 - ✅ **Configurable risk thresholds** via Administration panel
 
+## Security Notice
+
+**IMPORTANT - Before Deploying to Production:**
+
+1. **Change Default Password**: The default admin password is `odyssey` - change this immediately in production!
+2. **Use Environment Variables**: Set `ADMIN_DEFAULT_PASSWORD` environment variable with a strong password
+3. **Never Commit Secrets**: The following files are automatically excluded from Git:
+   - `.env` - Environment variables
+   - `.users.json` - User accounts and passwords
+   - `.registration` - Organization details
+   - `.autosave.json` - Project data
+
+📖 **See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete security setup instructions**
+
 ## Installation
 
 ### Prerequisites

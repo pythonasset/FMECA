@@ -213,4 +213,6 @@ __marimo__/
 *.local.json
 files.zip
 .autosave.json
+.users.json
 .registration
+.env

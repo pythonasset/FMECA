@@ -738,10 +738,14 @@ def initialize_users_db():
     migrate_user_database()
     
     if not os.path.exists(users_path):
+        # Get default admin password from environment variable or use default
+        # SECURITY: Change ADMIN_DEFAULT_PASSWORD in production environments
+        default_password = os.getenv('ADMIN_DEFAULT_PASSWORD', 'odyssey')
+        
         # Create default admin user (hidden) with Administrator role
         default_users = {
             "admin": {
-                "password": hashlib.sha256("odyssey".encode()).hexdigest(),
+                "password": hashlib.sha256(default_password.encode()).hexdigest(),
                 "position": "System Administrator",
                 "created_date": datetime.now().isoformat(),
                 "user_type": "Administrator",
