@@ -72,6 +72,88 @@ streamlit run rcm_fmeca_app.py
 
 4. Open your web browser to the URL shown (typically http://localhost:8501)
 
+## First-Time Setup
+
+### Step 1: Software Registration (One-Time)
+
+On first launch, you'll be prompted to register the software for your organization:
+
+1. Complete the registration form with:
+   - **Authority/Organization Name** * (required)
+   - **Department/Division** * (required)
+   - **Contact Person Name** * (required)
+   - **Contact Email** * (required)
+   - Phone Number (optional)
+   - Organization Address (optional)
+
+2. Click "✅ Register Application"
+3. Registration details are saved to `.registration` file
+
+**Note**: This is a one-time organizational registration. Your registration details will appear throughout the application.
+
+### Step 2: User Authentication (Every Session)
+
+After software registration, user authentication is required:
+
+#### Default Administrator Account
+
+A default admin account is automatically created:
+- **Username**: `admin`
+- **Password**: `odyssey`
+- **User Type**: Administrator (full access)
+
+**Important**: This account cannot be modified or deleted and provides initial access to the system.
+
+#### Logging In
+
+1. Enter your username and password
+2. Click "🔓 Login"
+3. Upon successful login, you'll see the main application
+
+#### Registering New Users
+
+New users can register themselves:
+
+1. Click the "📝 Register New User" tab
+2. Complete the registration form:
+   - **Username** * (unique, cannot be "admin")
+   - **Full Name** * (required)
+   - **Position** * (required, e.g., "Asset Manager")
+   - **Password** * (minimum 6 characters)
+   - **Confirm Password** * (must match)
+
+3. Click "✅ Register"
+4. New users are created with "User" type by default
+5. Return to Login tab to access the application
+
+**Note**: All passwords are securely hashed using SHA-256 encryption and never stored in plain text.
+
+## User Types and Permissions
+
+The application implements role-based access control with three user types:
+
+### 👤 User (Default)
+- Access to all RCM analysis features (Stages 1-4)
+- Can create projects and conduct analyses
+- Can export and import data
+- **Cannot** access Administration section
+
+### ⚙️ Super User
+- All User permissions
+- **Can** access Administration section
+- Can configure risk matrix settings
+- **Cannot** manage other users
+
+### 🔐 Administrator
+- Full access to all features
+- Can access Administration section
+- Can configure risk matrix settings
+- **Can manage user types** for all users
+- Can promote users to Super User or Administrator
+- View login statistics for all users
+
+**Note**: Only Administrators can change user types. This is done through Administration → Manage Users.
+
 ## Usage Guide
 
 ### Stage 1: Planning & Preparation

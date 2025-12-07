@@ -13,6 +13,7 @@ import io
 import configparser
 import os
 import time
+import hashlib
 
 # Cache configuration loading for better performance
 @st.cache_resource
@@ -207,6 +208,16 @@ def initialize_session_state():
     """Initialize all session state variables"""
     if 'current_stage' not in st.session_state:
         st.session_state.current_stage = 1
+    
+    # User authentication state
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    
+    if 'current_user' not in st.session_state:
+        st.session_state.current_user = None
+    
+    if 'user_data' not in st.session_state:
+        st.session_state.user_data = None
     
     # Project-level data
     if 'project_data' not in st.session_state:
@@ -671,6 +682,344 @@ def get_registration_details():
         print(f"Error loading registration: {str(e)}")
     return {}
 
+# User Authentication Functions
+def get_users_path():
+    """Get the path for the users database file"""
+    return os.path.join(os.path.dirname(__file__), '.users.json')
+
+def migrate_user_database():
+    """Migrate old user database format (is_admin) to new format (user_type) and add login_count"""
+    users_path = get_users_path()
+    try:
+        if os.path.exists(users_path):
+            with open(users_path, 'r') as f:
+                users = json.load(f)
+            
+            # Check if migration is needed
+            needs_migration = False
+            for username, user_data in users.items():
+                if 'is_admin' in user_data and 'user_type' not in user_data:
+                    needs_migration = True
+                    break
+                if 'login_count' not in user_data:
+                    needs_migration = True
+                    break
+            
+            if needs_migration:
+                # Migrate each user
+                for username, user_data in users.items():
+                    # Migrate is_admin to user_type
+                    if 'is_admin' in user_data:
+                        # Convert is_admin to user_type
+                        if user_data.get('is_admin', False):
+                            user_data['user_type'] = 'Administrator'
+                        else:
+                            user_data['user_type'] = 'User'
+                        # Remove old is_admin field
+                        del user_data['is_admin']
+                    
+                    # Add login_count if missing
+                    if 'login_count' not in user_data:
+                        user_data['login_count'] = 0
+                
+                # Save migrated data
+                with open(users_path, 'w') as f:
+                    json.dump(users, f, indent=2)
+                
+                print("User database migrated to new format")
+    except Exception as e:
+        print(f"Error during user database migration: {str(e)}")
+
+def initialize_users_db():
+    """Initialize users database with default admin user"""
+    users_path = get_users_path()
+    
+    # First, migrate existing database if needed
+    migrate_user_database()
+    
+    if not os.path.exists(users_path):
+        # Create default admin user (hidden) with Administrator role
+        default_users = {
+            "admin": {
+                "password": hashlib.sha256("odyssey".encode()).hexdigest(),
+                "position": "System Administrator",
+                "created_date": datetime.now().isoformat(),
+                "user_type": "Administrator",
+                "full_name": "Administrator",
+                "login_count": 0
+            }
+        }
+        try:
+            with open(users_path, 'w') as f:
+                json.dump(default_users, f, indent=2)
+        except Exception as e:
+            print(f"Error initializing users database: {str(e)}")
+
+def load_users():
+    """Load users from database"""
+    users_path = get_users_path()
+    try:
+        if os.path.exists(users_path):
+            with open(users_path, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading users: {str(e)}")
+    return {}
+
+def save_user(username, password, full_name, position, user_type="User"):
+    """Save a new user to the database"""
+    try:
+        users = load_users()
+        
+        if username.lower() in [u.lower() for u in users.keys()]:
+            return False, "Username already exists"
+        
+        # Hash the password
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        
+        users[username] = {
+            "password": hashed_password,
+            "full_name": full_name,
+            "position": position,
+            "created_date": datetime.now().isoformat(),
+            "user_type": user_type,
+            "login_count": 0
+        }
+        
+        with open(get_users_path(), 'w') as f:
+            json.dump(users, f, indent=2)
+        
+        return True, "User registered successfully"
+    except Exception as e:
+        return False, f"Error saving user: {str(e)}"
+
+def authenticate_user(username, password):
+    """Authenticate user credentials and increment login counter"""
+    users = load_users()
+    
+    if username not in users:
+        return False, None
+    
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    
+    if users[username]['password'] == hashed_password:
+        # Increment login counter
+        if 'login_count' not in users[username]:
+            users[username]['login_count'] = 0
+        users[username]['login_count'] += 1
+        
+        # Update last login timestamp
+        users[username]['last_login'] = datetime.now().isoformat()
+        
+        # Save updated user data
+        try:
+            with open(get_users_path(), 'w') as f:
+                json.dump(users, f, indent=2)
+        except Exception as e:
+            print(f"Error updating login count: {str(e)}")
+        
+        return True, users[username]
+    
+    return False, None
+
+def is_user_logged_in():
+    """Check if a user is logged in"""
+    return st.session_state.get('logged_in', False) and st.session_state.get('current_user', None) is not None
+
+def get_user_type():
+    """Get the current user's type"""
+    if is_user_logged_in():
+        user_data = st.session_state.get('user_data', {})
+        return user_data.get('user_type', 'User')
+    return None
+
+def is_administrator():
+    """Check if current user is an Administrator"""
+    return get_user_type() == 'Administrator'
+
+def is_super_user():
+    """Check if current user is a Super User"""
+    return get_user_type() == 'Super User'
+
+def can_access_administration():
+    """Check if current user can access Administration section"""
+    user_type = get_user_type()
+    return user_type in ['Administrator', 'Super User']
+
+def update_user_type(username, new_user_type):
+    """Update a user's type (only for Administrators)"""
+    try:
+        users = load_users()
+        
+        if username not in users:
+            return False, "User not found"
+        
+        if username == "admin":
+            return False, "Cannot modify the default admin account"
+        
+        users[username]['user_type'] = new_user_type
+        
+        with open(get_users_path(), 'w') as f:
+            json.dump(users, f, indent=2)
+        
+        return True, f"User type updated to {new_user_type}"
+    except Exception as e:
+        return False, f"Error updating user type: {str(e)}"
+
+def show_login_form():
+    """Display login form"""
+    st.markdown("# 🔐 User Login")
+    st.markdown("---")
+    
+    st.info("ℹ️ Please log in to access the FMECA & RCM Analysis Tool")
+    st.markdown("")
+    
+    # Create tabs for login and registration
+    tab1, tab2 = st.tabs(["🔑 Login", "📝 Register New User"])
+    
+    with tab1:
+        st.markdown("### Login to Your Account")
+        st.markdown("")
+        
+        with st.form("login_form"):
+            username = st.text_input(
+                "Username",
+                placeholder="Enter your username"
+            )
+            
+            password = st.text_input(
+                "Password",
+                type="password",
+                placeholder="Enter your password"
+            )
+            
+            st.markdown("")
+            
+            col1, col2, col3 = st.columns([1, 1, 2])
+            with col1:
+                submit = st.form_submit_button("🔓 Login", type="primary", use_container_width=True)
+            
+            if submit:
+                if not username or not password:
+                    st.error("❌ Please enter both username and password")
+                else:
+                    success, user_data = authenticate_user(username, password)
+                    
+                    if success:
+                        st.session_state.logged_in = True
+                        st.session_state.current_user = username
+                        st.session_state.user_data = user_data
+                        st.success(f"✅ Welcome back, {user_data.get('full_name', username)}!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.error("❌ Invalid username or password")
+    
+    with tab2:
+        st.markdown("### Register New User")
+        st.markdown("")
+        
+        with st.form("user_registration_form"):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                new_username = st.text_input(
+                    "Username *",
+                    help="Choose a unique username",
+                    placeholder="e.g., jsmith"
+                )
+                
+                new_full_name = st.text_input(
+                    "Full Name *",
+                    help="Your full name",
+                    placeholder="e.g., John Smith"
+                )
+            
+            with col2:
+                new_position = st.text_input(
+                    "Position *",
+                    help="Your position in the organization",
+                    placeholder="e.g., Asset Manager"
+                )
+                
+                new_password = st.text_input(
+                    "Password *",
+                    type="password",
+                    help="Choose a secure password (min 6 characters)",
+                    placeholder="Enter password"
+                )
+            
+            new_password_confirm = st.text_input(
+                "Confirm Password *",
+                type="password",
+                placeholder="Re-enter password"
+            )
+            
+            st.markdown("")
+            st.markdown("**All fields are required**")
+            st.markdown("")
+            
+            col_a, col_b, col_c = st.columns([1, 1, 2])
+            with col_a:
+                register = st.form_submit_button("✅ Register", type="primary", use_container_width=True)
+            
+            if register:
+                # Validation
+                if not new_username or not new_username.strip():
+                    st.error("❌ Username is required")
+                elif not new_full_name or not new_full_name.strip():
+                    st.error("❌ Full name is required")
+                elif not new_position or not new_position.strip():
+                    st.error("❌ Position is required")
+                elif not new_password or len(new_password) < 6:
+                    st.error("❌ Password must be at least 6 characters long")
+                elif new_password != new_password_confirm:
+                    st.error("❌ Passwords do not match")
+                elif new_username.lower() == 'admin':
+                    st.error("❌ This username is reserved")
+                else:
+                    success, message = save_user(
+                        new_username.strip(),
+                        new_password,
+                        new_full_name.strip(),
+                        new_position.strip()
+                    )
+                    
+                    if success:
+                        st.success(f"✅ {message}! You can now log in.")
+                        st.balloons()
+                    else:
+                        st.error(f"❌ {message}")
+    
+    st.markdown("---")
+    st.markdown("")
+    
+    # Show registration info at bottom
+    registration_info = get_registration_details()
+    if registration_info:
+        st.info(f"📋 This software is registered to: **{registration_info.get('authority_name', 'N/A')}**")
+    
+    st.markdown("")
+    
+    # Prevent any other content from showing
+    st.stop()
+
+def show_logout_button():
+    """Display logout button in sidebar"""
+    if is_user_logged_in():
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 👤 User Information")
+        user_data = st.session_state.get('user_data', {})
+        st.sidebar.markdown(f"**User:** {st.session_state.current_user}")
+        st.sidebar.markdown(f"**Position:** {user_data.get('position', 'N/A')}")
+        st.sidebar.markdown(f"**User Type:** {user_data.get('user_type', 'User')}")
+        
+        if st.sidebar.button("🚪 Logout", use_container_width=True):
+            st.session_state.logged_in = False
+            st.session_state.current_user = None
+            st.session_state.user_data = None
+            st.rerun()
+
 def show_registration_form():
     """Display registration form that must be completed before using the app"""
     st.markdown("# 🔐 Application Registration Required")
@@ -790,13 +1139,14 @@ def sidebar_navigation():
             st.session_state.current_view = 'rcm_navigation'
             st.rerun()
     
-    # Administration Section
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### ⚙️ Administration")
-    
-    if st.sidebar.button("🔧 Administration", key="nav_admin", use_container_width=True):
-        st.session_state.current_view = 'administration'
-        st.rerun()
+    # Administration Section - Only visible to Administrators and Super Users
+    if can_access_administration():
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### ⚙️ Administration")
+        
+        if st.sidebar.button("🔧 Administration", key="nav_admin", use_container_width=True):
+            st.session_state.current_view = 'administration'
+            st.rerun()
     
     # Data Management Section
     st.sidebar.markdown("---")
@@ -922,6 +1272,14 @@ if not is_registered():
     show_registration_form()
     # st.stop() is called in show_registration_form() to prevent further execution
 
+# Initialize user database with default admin user
+initialize_users_db()
+
+# User Authentication Check - Must be logged in after registration
+if not is_user_logged_in():
+    show_login_form()
+    # st.stop() is called in show_login_form() to prevent further execution
+
 # Load registration details for display (no fallback to config.ini)
 registration_info = get_registration_details()
 REGISTERED_AUTHORITY = registration_info.get('authority_name', 'Not Registered')
@@ -931,6 +1289,9 @@ REGISTERED_EMAIL = registration_info.get('contact_email', '')
 REGISTERED_DATE = registration_info.get('registration_date', '')
 
 sidebar_navigation()
+
+# Add logout button to sidebar
+show_logout_button()
 
 # Main content area
 st.markdown("# 🔧 FMECA & RCM Analysis Tool")
@@ -1278,6 +1639,12 @@ elif st.session_state.current_view == 'future':
 **Technical Support:** {config_data['TECHNICAL_CONTACT']}""")
 
 elif st.session_state.current_view == 'administration':
+    # Administration page - Verify user has access
+    if not can_access_administration():
+        st.error("❌ Access Denied: You do not have permission to access the Administration section.")
+        st.info("Only Administrators and Super Users can access Administration. Please contact your Administrator if you need access.")
+        st.stop()
+    
     # Administration page
     st.markdown("### ⚙️ Administration")
     st.markdown("")
@@ -1286,9 +1653,15 @@ elif st.session_state.current_view == 'administration':
     st.markdown("")
     
     # Administration options dropdown
+    admin_options = ["Select...", "Configure Risk Matrix"]
+    
+    # Only Administrators can manage users
+    if is_administrator():
+        admin_options.append("Manage Users")
+    
     admin_option = st.selectbox(
         "Select Administration Task",
-        ["Select...", "Configure Risk Matrix"],
+        admin_options,
         key="admin_task_selector"
     )
     
@@ -1410,6 +1783,134 @@ elif st.session_state.current_view == 'administration':
         st.markdown("")
         st.success("""**Configuration Active:** Risk thresholds are now fully customizable. 
         Changes will be applied immediately to all risk assessments, the Risk Matrix display, and consequence category classifications throughout the application.""")
+    
+    elif admin_option == "Manage Users":
+        st.markdown("---")
+        st.markdown("### 👥 Manage Users")
+        st.markdown("")
+        
+        st.markdown("""Manage user accounts and assign user types. Only Administrators can change user types. 
+        Super Users can only be designated by Administrators.""")
+        st.markdown("")
+        
+        # Load all users
+        users = load_users()
+        
+        if not users:
+            st.warning("⚠️ No users found in the system.")
+        else:
+            # Display current user type info
+            st.markdown("#### User Type Descriptions")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("**👤 User**")
+                st.markdown("- Default user type")
+                st.markdown("- Can use RCM analysis features")
+                st.markdown("- Cannot access Administration")
+            
+            with col2:
+                st.markdown("**⚙️ Super User**")
+                st.markdown("- Advanced user type")
+                st.markdown("- Can use RCM analysis features")
+                st.markdown("- Can access Administration")
+                st.markdown("- Must be designated by Administrator")
+            
+            with col3:
+                st.markdown("**🔐 Administrator**")
+                st.markdown("- Highest privilege level")
+                st.markdown("- Full access to all features")
+                st.markdown("- Can access Administration")
+                st.markdown("- Can manage user types")
+            
+            st.markdown("")
+            st.markdown("---")
+            st.markdown("#### User List and Management")
+            st.markdown("")
+            
+            # Create a table of users with their information
+            user_data = []
+            for username, user_info in users.items():
+                # Format last login date
+                last_login = user_info.get('last_login', 'Never')
+                if last_login != 'Never':
+                    try:
+                        last_login = last_login[:10]  # Just the date part
+                    except:
+                        last_login = 'N/A'
+                
+                user_data.append({
+                    "Username": username,
+                    "Full Name": user_info.get('full_name', 'N/A'),
+                    "Position": user_info.get('position', 'N/A'),
+                    "User Type": user_info.get('user_type', 'User'),
+                    "Login Count": user_info.get('login_count', 0),
+                    "Last Login": last_login,
+                    "Created": user_info.get('created_date', 'N/A')[:10] if user_info.get('created_date') else 'N/A'
+                })
+            
+            # Display as dataframe
+            df_users = pd.DataFrame(user_data)
+            st.dataframe(df_users, use_container_width=True, hide_index=True)
+            
+            st.markdown("")
+            st.markdown("---")
+            st.markdown("#### Change User Type")
+            st.markdown("")
+            
+            # User selection and type change interface
+            col_user, col_type = st.columns([2, 1])
+            
+            with col_user:
+                # Filter out admin from the list
+                regular_users = {k: v for k, v in users.items() if k != "admin"}
+                
+                if not regular_users:
+                    st.info("ℹ️ No regular users to manage. Only the default admin account exists.")
+                else:
+                    selected_username = st.selectbox(
+                        "Select User to Modify",
+                        options=list(regular_users.keys()),
+                        format_func=lambda x: f"{x} ({regular_users[x].get('full_name', 'N/A')}) - Current: {regular_users[x].get('user_type', 'User')}",
+                        key="user_select"
+                    )
+                    
+                    with col_type:
+                        new_user_type = st.selectbox(
+                            "New User Type",
+                            options=["User", "Super User", "Administrator"],
+                            key="new_user_type"
+                        )
+                    
+                    st.markdown("")
+                    
+                    # Show current vs new
+                    if selected_username:
+                        current_type = regular_users[selected_username].get('user_type', 'User')
+                        
+                        if current_type != new_user_type:
+                            st.warning(f"⚠️ You are about to change **{selected_username}**'s user type from **{current_type}** to **{new_user_type}**")
+                            
+                            col_confirm, col_cancel = st.columns([1, 2])
+                            
+                            with col_confirm:
+                                if st.button("✅ Confirm Change", type="primary", use_container_width=True, key="confirm_change"):
+                                    success, message = update_user_type(selected_username, new_user_type)
+                                    
+                                    if success:
+                                        st.success(f"✅ {message}")
+                                        st.balloons()
+                                        time.sleep(1)
+                                        st.rerun()
+                                    else:
+                                        st.error(f"❌ {message}")
+                        else:
+                            st.info(f"ℹ️ User **{selected_username}** is already a **{current_type}**")
+            
+            st.markdown("")
+            st.markdown("---")
+            st.info("""**Note:** The default 'admin' account cannot be modified and will always remain as Administrator. 
+            Changes to user types take effect immediately but require the affected user to log out and log back in to see updated permissions.""")
 
 # Render current stage content based on sidebar selection
 st.markdown("---")

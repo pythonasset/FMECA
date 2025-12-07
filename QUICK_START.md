@@ -1,6 +1,6 @@
 # Quick Start Guide - FMECA & RCM Analysis Tool
 
-## Installation & First Run (5 minutes)
+## Installation & First Run (10 minutes)
 
 ### Step 1: Install Dependencies
 
@@ -22,9 +22,31 @@ pip install -r requirements.txt
 streamlit run rcm_fmeca_app.py
 ```
 
-The application will open automatically in your browser at `http://localhost:8502`
+The application will open automatically in your browser at `http://localhost:8501`
 
-### Step 3: Try the Example (Optional)
+### Step 3: Register the Software (2 minutes, one-time)
+
+On first launch, you'll see the registration form:
+
+1. Enter your organization details (required fields marked with *)
+2. Click "✅ Register Application"
+3. Registration is saved to `.registration` file
+
+### Step 4: Log In (1 minute)
+
+After registration, you need to log in:
+
+**Use the default administrator account:**
+- Username: `admin`
+- Password: `odyssey`
+
+Or register a new user account:
+1. Click "📝 Register New User" tab
+2. Fill in username, full name, position, and password
+3. Return to Login tab and sign in
+4. **Note**: New users start as "User" type (full RCM access, no Administration)
+
+### Step 5: Try the Example (Optional)
 
 1. Click "Stage 4: Reports & Export" in the sidebar
 2. Navigate to "Export Data" tab

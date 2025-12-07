@@ -1,8 +1,13 @@
-# Registration System
+# Registration and Authentication System
 
 ## Overview
 
-The FMECA & RCM Analysis Tool requires mandatory registration before use. All organization information is stored in the `.registration` file and displayed throughout the application.
+The FMECA & RCM Analysis Tool implements a two-tier security system:
+
+1. **Software Registration** (Organization-level, one-time)
+2. **User Authentication** (Per-user, every session)
+
+Both systems work together to ensure proper licensing and user access control.
 
 ## Key Points
 
@@ -138,20 +143,211 @@ Contact: sm@odysseus-imc.com
 ### Technical Support
 Contact: adam.hassan@cambia.com.au
 
+## User Authentication System (NEW)
+
+### Overview
+
+After completing software registration, all users must log in to access the application.
+
+### User Database (`.users.json`)
+
+User accounts are stored in `.users.json` with the following information:
+- Username (unique identifier)
+- Hashed password (SHA-256, never plain text)
+- Full name
+- Position
+- User type (User, Super User, or Administrator)
+- Login count (tracks total logins)
+- Last login timestamp
+- Account creation date
+
+### Default Administrator Account
+
+**Automatically created on first run:**
+- Username: `admin`
+- Password: `odyssey` (change after first login recommended)
+- User Type: Administrator (cannot be modified)
+- Full access to all features
+
+**Important**: This account cannot be deleted or downgraded. Keep credentials secure.
+
+### User Types and Permissions
+
+#### 👤 User (Default)
+- **Access**: All RCM analysis features (Stages 1-4)
+- **Cannot access**: Administration section
+- **Use case**: Standard analysts and engineers
+
+#### ⚙️ Super User
+- **Access**: All RCM analysis features + Administration section
+- **Cannot**: Manage other users
+- **Use case**: Senior analysts who need to configure risk thresholds
+- **Assignment**: Only Administrators can designate Super Users
+
+#### 🔐 Administrator
+- **Access**: Full application access
+- **Can**: Manage all users and change user types
+- **Can**: Access and configure all Administration settings
+- **Can**: View login statistics for all users
+- **Use case**: System administrators and managers
+
+### User Registration Process
+
+1. **Self-Registration**: Users can register themselves via the login page
+2. **Default Type**: All new registrations create "User" type accounts
+3. **Type Upgrade**: Only Administrators can upgrade users to Super User or Administrator
+4. **Process**:
+   - Click "📝 Register New User" tab on login page
+   - Enter username, full name, position, password
+   - Passwords must be at least 6 characters
+   - Username cannot be "admin"
+   - Return to login tab after registration
+
+### Managing Users (Administrator Only)
+
+Administrators can manage users through Administration → Manage Users:
+
+1. **View All Users**: See complete user list with details
+   - Username, full name, position
+   - User type
+   - Login count and last login date
+   - Account creation date
+
+2. **Change User Types**:
+   - Select user from dropdown
+   - Choose new user type
+   - Confirm change
+   - User must log out and back in for changes to take effect
+
+3. **Login Statistics**: Track user activity
+   - Total login count per user
+   - Last login timestamp
+   - Audit trail for user access
+
+### Security Features
+
+#### Password Security
+- SHA-256 hashing (passwords never stored in plain text)
+- Minimum 6 characters required
+- Secure authentication on every login
+
+#### Access Control
+- Role-based permissions (User, Super User, Administrator)
+- Administration section hidden from unauthorized users
+- Multi-layer access verification
+
+#### Session Management
+- Secure session handling
+- Logout capability
+- User information displayed in sidebar
+
+#### Audit Trail
+- Login counter for each user
+- Last login timestamps
+- Persistent across sessions
+
+### User Information Display
+
+When logged in, the sidebar shows:
+```
+👤 User Information
+User: [username]
+Position: [position]
+User Type: [User|Super User|Administrator]
+
+🚪 Logout
+```
+
+### Authentication Flow
+
+```
+1. Launch Application
+   ↓
+2. Software Registration (if not registered)
+   ↓
+3. Login Page
+   ↓
+4. Enter Credentials or Register New User
+   ↓
+5. Authentication Check
+   ↓
+6. Main Application (access based on user type)
+```
+
+### Files and Locations
+
+- **`.registration`**: Organization registration (one-time)
+- **`.users.json`**: User accounts and authentication
+- Both files in application directory (same as `rcm_fmeca_app.py`)
+- Both files excluded from git via `.gitignore`
+
+### Backup and Security
+
+#### What to Backup
+```bash
+# Backup both registration and user database
+cp .registration /backup/location/registration_backup_$(date +%Y%m%d).json
+cp .users.json /backup/location/users_backup_$(date +%Y%m%d).json
+```
+
+#### Security Recommendations
+1. Keep `.users.json` secure (contains hashed passwords)
+2. Limit Administrator access to trusted personnel
+3. Change default admin password after setup
+4. Regularly review user access in Manage Users
+5. Monitor login statistics for unusual activity
+
+### Troubleshooting
+
+#### Lost Admin Password
+1. Delete `.users.json` file
+2. Restart application
+3. Default admin account will be recreated
+4. **Warning**: All user accounts will be lost
+
+#### User Cannot See Administration
+- Check user type in Administration → Manage Users
+- Only Super Users and Administrators have access
+- User must log out and back in after type change
+
+#### Login Count Not Increasing
+- Verify user is logging in successfully
+- Check `.users.json` file for `login_count` field
+- Database migration runs automatically on first startup
+
 ## For Developers
 
 ### Configuration Priority
-1. **Registration info**: From `.registration` file ONLY
-2. **Application info**: From `config.ini` (name, version, contacts)
-3. **No mixing**: Organization details are never read from `config.ini`
+1. **Software Registration**: From `.registration` file ONLY
+2. **User Authentication**: From `.users.json` file
+3. **Application info**: From `config.ini` (name, version, contacts)
+4. **No mixing**: Organization and user details are separate
 
-### Code References
-- Registration check: Line 732 in `rcm_fmeca_app.py`
-- Registration loading: Line 736-742 in `rcm_fmeca_app.py`
-- Display on main page: Line 754
-- Display in sidebar: Line 709-724
+### Code References (v1.0.2+)
+- User authentication functions: Lines 685-903
+- Authentication check: Line 1173
+- User management UI: Lines 1717-1833
+- Login form display: Lines 805-941
+- Sidebar user info: Lines 1007-1021
+
+### Database Schema
+
+#### .users.json Format
+```json
+{
+  "username": {
+    "password": "sha256_hashed_password",
+    "full_name": "Full Name",
+    "position": "Position Title",
+    "user_type": "User|Super User|Administrator",
+    "login_count": 0,
+    "last_login": "2025-12-07T12:56:16.024377",
+    "created_date": "2025-12-07T12:14:35.284872"
+  }
+}
+```
 
 ---
 
-**Last Updated**: December 6, 2025  
-**Applies To**: FMECA & RCM Analysis Tool v1.0.0+
+**Last Updated**: December 7, 2025  
+**Applies To**: FMECA & RCM Analysis Tool v1.0.2+

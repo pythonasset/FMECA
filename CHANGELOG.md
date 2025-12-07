@@ -2,6 +2,123 @@
 
 All notable changes to the FMECA & RCM Analysis Tool will be documented in this file.
 
+## [1.0.2] - 2025-12-07
+
+### Added
+
+- **User Authentication System**: Comprehensive login and registration system for application access
+  - Login form with username/password authentication
+  - User registration with full name, position, and username
+  - Secure password hashing (SHA-256)
+  - Session management for logged-in users
+  - Automatic user database initialization
+  - Login counter tracking for all users
+  - Last login timestamp recording
+- **Role-Based Access Control**: Three-tier user type system for granular permissions
+  - **User** (default): Access to RCM analysis features only
+  - **Super User**: Access to RCM analysis and Administration section
+  - **Administrator**: Full access including user management capabilities
+- **Default Administrator Account**: Hidden admin account for initial system access
+  - Username: `admin` (fixed, cannot be modified)
+  - Position: System Administrator
+  - User Type: Administrator (permanent)
+  - Protected from modification or deletion
+- **User Management Interface**: Administrator-only panel for managing user types
+  - View all users with complete details (username, full name, position, user type, login count, last login, created date)
+  - Change user types between User, Super User, and Administrator
+  - Real-time user list with login statistics
+  - Confirmation workflow for type changes
+  - Protection for default admin account
+- **Conditional Administration Access**: Administration section visibility based on user role
+  - Only visible to Administrators and Super Users
+  - Access verification at both sidebar and view levels
+  - Prevent unauthorized access attempts
+- **Login Statistics Tracking**: Comprehensive user activity monitoring
+  - Login count increments with each successful authentication
+  - Last login timestamp stored per user
+  - Statistics visible in User Management interface
+  - Persistent storage across sessions
+- **Database Migration System**: Automatic conversion of user database schema
+  - Migrates old `is_admin` field to new `user_type` field
+  - Adds `login_count` to existing users (initialized to 0)
+  - Backward compatibility with existing user databases
+  - One-time migration on application startup
+
+### Changed
+
+- **Sidebar User Information**: Updated to display username instead of full name
+  - Shows: User (username), Position, User Type
+  - Cleaner, more concise display
+  - Direct reference to login credentials
+- **User Registration Flow**: Enhanced registration process
+  - All new users default to "User" type
+  - Position field now mandatory
+  - Password minimum length: 6 characters
+  - Username validation (cannot use "admin")
+- **Authentication Flow**: Two-stage access control
+  1. Software registration (organization-level, one-time)
+  2. User authentication (per-user, every session)
+
+### Security
+
+- **Password Security**: SHA-256 hashing for all passwords
+  - Passwords never stored in plain text
+  - Secure authentication verification
+- **Access Control**: Multiple layers of permission checking
+  - Sidebar navigation filtering
+  - View-level access verification
+  - Role-based feature visibility
+- **User Data Protection**: User database stored in `.users.json`
+  - Separate from organization registration
+  - Contains hashed passwords only
+  - Login statistics for audit trail
+
+### Technical Details
+
+- **New Functions Added**:
+  - `get_users_path()`: Returns path to user database file
+  - `migrate_user_database()`: Migrates old database format to new schema
+  - `initialize_users_db()`: Creates default admin user
+  - `load_users()`: Loads user database from file
+  - `save_user()`: Saves new user with default User type
+  - `authenticate_user()`: Validates credentials and updates login counter
+  - `is_user_logged_in()`: Checks login status
+  - `get_user_type()`: Returns current user's type
+  - `is_administrator()`: Checks if user is Administrator
+  - `is_super_user()`: Checks if user is Super User
+  - `can_access_administration()`: Verifies administration access rights
+  - `update_user_type()`: Changes user type (Administrator only)
+  - `show_login_form()`: Displays login/registration interface
+  - `show_logout_button()`: Displays user info and logout in sidebar
+- **New Session State Variables**:
+  - `logged_in`: Boolean flag for authentication status
+  - `current_user`: Currently logged-in username
+  - `user_data`: Complete user profile data
+- **New Database File**: `.users.json`
+  - User accounts with hashed passwords
+  - User types and permissions
+  - Login statistics (count and last login)
+  - Creation timestamps
+- **User Database Schema**:
+  ```json
+  {
+    "username": {
+      "password": "hashed_password",
+      "full_name": "Full Name",
+      "position": "Position Title",
+      "user_type": "User|Super User|Administrator",
+      "login_count": 0,
+      "last_login": "ISO timestamp",
+      "created_date": "ISO timestamp"
+    }
+  }
+  ```
+- **Files Modified**: `rcm_fmeca_app.py`
+- **Lines Affected**: ~400 lines added/modified
+- **New Dependencies**: `hashlib` (built-in Python module)
+
+---
+
 ## [1.0.1] - 2025-12-06
 
 ### Added
