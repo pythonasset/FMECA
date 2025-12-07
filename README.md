@@ -99,7 +99,7 @@ After software registration, user authentication is required:
 
 A default admin account is automatically created:
 - **Username**: `admin`
-- **Password**: `odyssey`
+- **Password**: `#$^@*******`
 - **User Type**: Administrator (full access)
 
 **Important**: This account cannot be modified or deleted and provides initial access to the system.
